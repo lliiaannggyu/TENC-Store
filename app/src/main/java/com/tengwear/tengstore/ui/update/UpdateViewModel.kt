@@ -1,14 +1,14 @@
-package com.example.weargithubstore.ui.update
+package com.tengwear.tengstore.ui.update
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.weargithubstore.BuildConfig
-import com.example.weargithubstore.data.AppContainer
-import com.example.weargithubstore.data.download.ApkDownloader
-import com.example.weargithubstore.data.download.DownloadTracker
-import com.example.weargithubstore.data.remote.GitHubClient
-import com.example.weargithubstore.data.remote.dto.toDomain
-import com.example.weargithubstore.domain.model.Asset
+import com.tengwear.tengstore.BuildConfig
+import com.tengwear.tengstore.data.AppContainer
+import com.tengwear.tengstore.data.download.ApkDownloader
+import com.tengwear.tengstore.data.download.DownloadTracker
+import com.tengwear.tengstore.data.remote.GitHubClient
+import com.tengwear.tengstore.data.remote.dto.toDomain
+import com.tengwear.tengstore.domain.model.Asset
 import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

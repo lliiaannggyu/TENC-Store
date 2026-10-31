@@ -23,6 +23,7 @@ import com.tengwear.tengstore.ui.search.SearchScreen
 import com.tengwear.tengstore.ui.settings.SettingsScreen
 import com.tengwear.tengstore.ui.testhub.TestHubScreen
 import com.tengwear.tengstore.ui.theme.WearGitHubStoreTheme
+import com.tengwear.tengstore.ui.update.UpdateScreen
 import com.tengwear.tengstore.ui.upload.UploadScreen
 import java.net.URLDecoder
 
@@ -119,6 +120,9 @@ fun WearApp() {
             }
             composable("settings") {
                 SettingsScreen(navController)
+            }
+            composable("update") {
+                UpdateScreen(navController)
             }
         }
     }

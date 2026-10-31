@@ -1,4 +1,4 @@
-package com.example.weargithubstore.ui.update
+package com.tengwear.tengstore.ui.update
 
 import android.content.Context
 import android.content.Intent
@@ -42,9 +42,9 @@ import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Refresh
-import com.example.weargithubstore.BuildConfig
-import com.example.weargithubstore.ui.util.LIST_CHIP_HEIGHT
-import com.example.weargithubstore.ui.util.formatSize
+import com.tengwear.tengstore.BuildConfig
+import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
 
 /**
