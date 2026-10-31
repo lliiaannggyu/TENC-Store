@@ -1,0 +1,4 @@
+<resources>
+    <!-- Adaptive launcher icon background (Material baseline purple) -->
+    <color name="ic_launcher_background">#6750A4</color>
+</resources>
