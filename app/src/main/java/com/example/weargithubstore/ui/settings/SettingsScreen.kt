@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.runtime.collectAsState
 import com.example.weargithubstore.BuildConfig
@@ -96,6 +97,17 @@ fun SettingsScreen(navController: NavHostController) {
                 Text(
                     "TENC Store v${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）",
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+
+            // 应用内更新（GitHub Release，非强制）
+            item {
+                Chip(
+                    onClick = { navController.navigate("update") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("检查更新", maxLines = 1) },
+                    secondaryLabel = { Text("当前 v${BuildConfig.VERSION_NAME}", maxLines = 1) },
+                    icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                 )
             }
 

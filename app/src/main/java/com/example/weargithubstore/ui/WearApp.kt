@@ -23,6 +23,7 @@ import com.example.weargithubstore.ui.search.SearchScreen
 import com.example.weargithubstore.ui.settings.SettingsScreen
 import com.example.weargithubstore.ui.testhub.TestHubScreen
 import com.example.weargithubstore.ui.theme.WearGitHubStoreTheme
+import com.example.weargithubstore.ui.update.UpdateScreen
 import com.example.weargithubstore.ui.upload.UploadScreen
 import java.net.URLDecoder
 
@@ -119,6 +120,9 @@ fun WearApp() {
             }
             composable("settings") {
                 SettingsScreen(navController)
+            }
+            composable("update") {
+                UpdateScreen(navController)
             }
         }
     }
