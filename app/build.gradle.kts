@@ -14,17 +14,17 @@ plugins {
 }
 
 android {
-    namespace = "com.example.weargithubstore"
+    namespace = "com.tengwear.tengstore"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.weargithubstore"
+        applicationId = "com.tengwear.tengstore"
         // minSdk 25 = Android 7.1 / Wear OS 2.x：官方 Wear Compose 库要求的下限，
         // 从 30（Wear OS 3 专属）降低后可适配更多手表与安卓设备
         minSdk = 25
         targetSdk = 34
-        versionCode = 20
-        versionName = "1.19"
+        versionCode = 21
+        versionName = "1.20"
 
         // 密码本来自本地 secrets.properties（不入库），编译期写入 BuildConfig
         buildConfigField(
