@@ -1,12 +1,8 @@
 package com.tengwear.tengstore.ui.assets
 
 import android.app.Application
-import android.app.DownloadManager
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tengwear.tengstore.data.AppContainer
@@ -14,11 +10,9 @@ import com.tengwear.tengstore.data.download.ApkDownloader
 import com.tengwear.tengstore.data.download.DownloadTracker
 import com.tengwear.tengstore.domain.model.Asset
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -35,15 +29,12 @@ sealed interface DownloadUiState {
 }
 
 /**
- * Drives a single APK download: enqueues it via [ApkDownloader], polls progress
- * through [DownloadManager], and exposes an install action that launches the
- * system package installer via a FileProvider content URI.
+ * Drives a single APK download through the in-app streaming downloader
+ * ([ApkDownloader]) and exposes an install action that launches the system
+ * package installer via a FileProvider content URI.
  *
- * 闪退修复：
- * - Android 14+（targetSdk 34）要求动态注册广播接收器必须指定 RECEIVER_EXPORTED /
- *   RECEIVER_NOT_EXPORTED，否则 registerReceiver 直接抛 SecurityException——此前
- *   点下载即崩溃而系统下载继续进行，正是这个原因；
- * - 注册 / 入队 / 注销全部 runCatching 防御，任何异常都以 Failed 状态呈现而非崩溃。
+ * 进度由应用自己统计（替代系统 DownloadManager 轮询），
+ * 直连失败自动切换镜像，进度条实时移动。
  */
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -51,80 +42,29 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     private val _state = MutableStateFlow<DownloadUiState>(DownloadUiState.Idle)
     val state: StateFlow<DownloadUiState> = _state.asStateFlow()
 
-    private var pollJob: Job? = null
-    private var receiver: BroadcastReceiver? = null
+    private var downloadJob: Job? = null
 
     fun download(asset: Asset) {
         if (_state.value is DownloadUiState.Downloading) return
         _state.value = DownloadUiState.Downloading(asset, 0)
+        DownloadTracker.update(asset.name, 0, 0, asset.size)
 
-        val context = getApplication<Application>()
-        val downloadId = try {
-            downloader.enqueue(asset)
-        } catch (e: Exception) {
-            _state.value = DownloadUiState.Failed(asset, "无法开始下载：${e.message?.take(80)}")
-            return
-        }
-
-        try {
-            val r = object : BroadcastReceiver() {
-                override fun onReceive(ctx: Context?, intent: Intent?) {
-                    val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
-                    if (id == downloadId) handleComplete(asset)
-                }
+        downloadJob?.cancel()
+        downloadJob = viewModelScope.launch {
+            downloader.download(asset) { soFar, total ->
+                val progress = if (total > 0) ((soFar * 100) / total).toInt().coerceIn(0, 100) else 0
+                DownloadTracker.update(asset.name, progress, soFar, total)
+                _state.value = DownloadUiState.Downloading(asset, progress, soFar, total)
+            }.onSuccess { file ->
+                DownloadTracker.clear()
+                _state.value = DownloadUiState.Succeeded(asset, applyRename(file))
+            }.onFailure { e ->
+                DownloadTracker.clear()
+                _state.value = DownloadUiState.Failed(
+                    asset,
+                    "下载失败：${e.message?.take(60) ?: "网络错误"}（已尝试直连与镜像）",
+                )
             }
-            receiver = r
-            ContextCompat.registerReceiver(
-                context,
-                r,
-                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-                ContextCompat.RECEIVER_NOT_EXPORTED,
-            )
-        } catch (e: Exception) {
-            // 注册失败不致命：仍有轮询兜底
-            receiver = null
-        }
-
-        pollJob?.cancel()
-        pollJob = viewModelScope.launch {
-            var lastProgress = 0
-            while (isActive) {
-                val snapshot = runCatching { downloader.querySnapshot(downloadId) }.getOrNull()
-                when {
-                    snapshot == null -> delay(500)
-                    snapshot.done -> {
-                        DownloadTracker.clear()
-                        if (snapshot.failed) {
-                            _state.value = DownloadUiState.Failed(asset, "下载失败（系统下载器返回错误）")
-                        } else {
-                            handleComplete(asset)
-                        }
-                        break
-                    }
-                    else -> {
-                        lastProgress = snapshot.progress ?: lastProgress
-                        DownloadTracker.update(asset.name, lastProgress, snapshot.soFar, snapshot.total)
-                        _state.value = DownloadUiState.Downloading(
-                            asset = asset,
-                            progress = lastProgress,
-                            soFarBytes = snapshot.soFar,
-                            totalBytes = snapshot.total,
-                        )
-                        delay(400)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun handleComplete(asset: Asset) {
-        pollJob?.cancel()
-        DownloadTracker.clear()
-        val file = downloader.getFile(asset)
-        _state.value = if (file != null) {
-            DownloadUiState.Succeeded(asset, applyRename(file))
-        } else {
-            DownloadUiState.Failed(asset, "下载完成后未找到文件")
         }
     }
 
@@ -162,15 +102,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun reset() {
-        _state.value = DownloadUiState.Idle
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        pollJob?.cancel()
-        runCatching {
-            receiver?.let { getApplication<Application>().unregisterReceiver(it) }
+        if (downloadJob?.isActive != true) {
+            _state.value = DownloadUiState.Idle
         }
-        receiver = null
     }
 }

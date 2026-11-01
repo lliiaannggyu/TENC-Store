@@ -11,7 +11,6 @@ import com.tengwear.tengstore.data.remote.dto.toDomain
 import com.tengwear.tengstore.domain.model.Asset
 import java.io.File
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -83,42 +82,26 @@ class UpdateViewModel : ViewModel() {
         }
     }
 
-    /** 用系统 DownloadManager 下载新版本 APK，进度实时写入 state。 */
+    /** 用应用内流式下载器下载新版本 APK，进度实时写入 state（直连失败自动切镜像）。 */
     fun download() {
         val asset = _state.value.asset ?: return
         if (_state.value.downloadProgress != null) return
-        val downloader = ApkDownloader(AppContainer.context)
-        val id = downloader.enqueue(asset)
-        DownloadTracker.update(asset.name, 0, 0, asset.size)
+        downloadJob?.cancel()
         downloadJob = viewModelScope.launch {
             _state.value = _state.value.copy(downloadProgress = 0)
-            while (true) {
-                val snap = downloader.querySnapshot(id)
-                when {
-                    snap == null -> {
-                        _state.value = _state.value.copy(downloadProgress = null, error = "下载任务丢失")
-                        DownloadTracker.clear()
-                        break
-                    }
-                    snap.done && snap.failed -> {
-                        _state.value = _state.value.copy(downloadProgress = null, error = "下载失败")
-                        DownloadTracker.clear()
-                        break
-                    }
-                    snap.done -> {
-                        DownloadTracker.clear()
-                        _state.value = _state.value.copy(
-                            downloadProgress = null,
-                            downloadedFile = downloader.getFile(asset),
-                        )
-                        break
-                    }
-                    else -> {
-                        DownloadTracker.update(asset.name, snap.progress ?: 0, snap.soFar, snap.total)
-                        _state.value = _state.value.copy(downloadProgress = snap.progress ?: 0)
-                    }
-                }
-                delay(500)
+            ApkDownloader(AppContainer.context).download(asset) { soFar, total ->
+                val progress = if (total > 0) ((soFar * 100) / total).toInt().coerceIn(0, 100) else 0
+                DownloadTracker.update(asset.name, progress, soFar, total)
+                _state.value = _state.value.copy(downloadProgress = progress)
+            }.onSuccess { file ->
+                DownloadTracker.clear()
+                _state.value = _state.value.copy(downloadProgress = null, downloadedFile = file)
+            }.onFailure { e ->
+                DownloadTracker.clear()
+                _state.value = _state.value.copy(
+                    downloadProgress = null,
+                    error = "下载失败：${e.message?.take(60) ?: "网络错误"}（已尝试直连与镜像）",
+                )
             }
         }
     }
