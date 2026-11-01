@@ -1,0 +1,9 @@
+name = "tenc-store-stats"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# KV 命名空间绑定：先用下面的命令创建，再把 id 换成你自己的
+#   npx wrangler kv namespace create STATS_KV
+[[kv_namespaces]]
+binding = "KV"
+id = "在此填入你的 KV namespace id"
