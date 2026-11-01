@@ -55,6 +55,13 @@ fun HomeScreen(navController: NavHostController) {
         ) {
             item { ListHeader { Text("TENC Store") } }
 
+            // 顶部公告轮播（索引公告仓库的图片 + 标题，点击看全文）
+            item {
+                AnnouncementBanner(
+                    onOpen = { index -> navController.navigate("announcement/$index") },
+                )
+            }
+
             item {
                 Chip(
                     onClick = { navController.navigate("search") },

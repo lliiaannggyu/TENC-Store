@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,7 +23,6 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.dialog.Dialog
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
 import androidx.compose.material.icons.Icons
@@ -39,7 +36,6 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 fun AnnouncementsScreen(navController: NavHostController) {
     val viewModel: AnnouncementsViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
-    var detail by remember { mutableStateOf<Announcement?>(null) }
     val listState = rememberScalingLazyListState()
 
     LaunchedEffect(Unit) { viewModel.load() }
@@ -65,7 +61,7 @@ fun AnnouncementsScreen(navController: NavHostController) {
             items(uiState.items.size) { i ->
                 val announcement = uiState.items[i]
                 Chip(
-                    onClick = { detail = announcement },
+                    onClick = { navController.navigate("announcement/$i") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(announcement.title, maxLines = 1) },
                     secondaryLabel = {
@@ -86,23 +82,6 @@ fun AnnouncementsScreen(navController: NavHostController) {
                     label = { Text("刷新公告", maxLines = 1) },
                     icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                 )
-            }
-        }
-    }
-
-    detail?.let { announcement ->
-        Dialog(
-            showDialog = true,
-            onDismissRequest = { detail = null },
-        ) {
-            ScalingLazyColumn {
-                item { Text(announcement.title) }
-                item {
-                    Text(
-                        announcement.body.ifBlank { "（公告无正文）" },
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
-                }
             }
         }
     }

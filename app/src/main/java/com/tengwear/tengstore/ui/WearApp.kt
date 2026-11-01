@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.tengwear.tengstore.ui.announcements.AnnouncementDetailScreen
 import com.tengwear.tengstore.ui.announcements.AnnouncementsScreen
 import com.tengwear.tengstore.ui.assets.AssetsScreen
 import com.tengwear.tengstore.ui.downloads.DownloadsScreen
@@ -111,6 +112,10 @@ fun WearApp() {
             }
             composable("announcements") {
                 AnnouncementsScreen(navController)
+            }
+            composable("announcement/{index}") { backStackEntry ->
+                val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: -1
+                AnnouncementDetailScreen(navController, index)
             }
             composable("inbox") {
                 InboxScreen(navController)
