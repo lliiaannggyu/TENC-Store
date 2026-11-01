@@ -37,8 +37,9 @@ import com.tengwear.tengstore.ui.announcements.AnnouncementsStore
 
 /**
  * 主菜单顶部公告轮播：
- * 每页 = 公告仓库的 banner 图（无图则标题卡片）+ 底部「公告」标签与标题，
+ * 每页 = 公告仓库的 banner 图（无图则标题卡片）+ 底部标题，
  * 底部圆点指示器；点按任意一页进入公告详情页。
+ * 无操作时每 4 秒自动轮播到下一页。
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -64,6 +65,18 @@ fun AnnouncementBanner(
                 onClick = { onOpen(page) },
                 modifier = Modifier.fillMaxWidth(0.96f).padding(horizontal = 5.dp),
             )
+        }
+
+        // 自动轮播：每 4 秒翻到下一页（用户正在滑动时暂停）
+        LaunchedEffect(pagerState, list.size) {
+            if (list.size > 1) {
+                while (true) {
+                    kotlinx.coroutines.delay(4000)
+                    if (!pagerState.isScrollInProgress) {
+                        pagerState.animateScrollToPage((pagerState.currentPage + 1) % list.size)
+                    }
+                }
+            }
         }
 
         // 圆点指示器
@@ -118,33 +131,18 @@ private fun AnnouncementCard(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        // 底部叠加：公告标签 + 标题
-        Row(
+        // 底部叠加：标题
+        Text(
+            announcement.title,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "公告",
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF3D82F0))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                color = Color.White,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                announcement.title,
-                modifier = Modifier.padding(start = 6.dp).weight(1f),
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

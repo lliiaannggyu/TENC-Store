@@ -10,6 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,11 +54,12 @@ fun AnnouncementDetailScreen(navController: NavHostController, index: Int) {
                         AsyncImage(
                             model = url,
                             contentDescription = announcement.title,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(96.dp)
-                                .padding(horizontal = 8.dp)
-                                .clip(RoundedCornerShape(12.dp)),
+                                .padding(horizontal = 10.dp)
+                                .height(110.dp)
+                                .clip(RoundedCornerShape(14.dp)),
                         )
                     }
                 }
