@@ -59,13 +59,24 @@ object AnnouncementsStore {
             body.clear()
             image = null
         }
+        var inComment = false
         text.lines().forEach { line ->
+            val trimmed = line.trim()
+            // 跳过 HTML 注释块（<!-- ... -->），避免格式说明被解析成假公告
+            if (inComment) {
+                if (trimmed.contains("-->")) inComment = false
+                return@forEach
+            }
+            if (trimmed.startsWith("<!--")) {
+                if (!trimmed.contains("-->")) inComment = true
+                return@forEach
+            }
             when {
                 line.startsWith("## ") -> {
                     flush()
                     title = line.removePrefix("## ").trim()
                 }
-                title == null -> Unit // 标题前的内容（文件头注释）忽略
+                title == null -> Unit // 标题前的内容忽略
                 image == null -> imageRegex.find(line)?.let { m ->
                     image = resolveImageUrl(m.groupValues[1].trim(), owner, repoName)
                 }
