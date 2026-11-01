@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -100,20 +98,6 @@ fun SettingsScreen(navController: NavHostController) {
             item {
                 Text(
                     "TENC Store v${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-
-            // 商店统计：累积用户 / 今日与累计打开次数 / 当前在线（需配置统计后端）
-            item {
-                var stats by remember { mutableStateOf<com.tengwear.tengstore.data.StoreStats?>(null) }
-                LaunchedEffect(Unit) {
-                    stats = com.tengwear.tengstore.data.StatsClient.fetchStats()
-                }
-                Text(
-                    text = stats?.let {
-                        "累积用户 ${it.users} · 今日打开 ${it.todayOpens}\n累计打开 ${it.totalOpens} · 当前在线 ${it.online}"
-                    } ?: "统计数据未加载",
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }

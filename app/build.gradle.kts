@@ -23,30 +23,14 @@ android {
         // 从 30（Wear OS 3 专属）降低后可适配更多手表与安卓设备
         minSdk = 25
         targetSdk = 34
-        versionCode = 32
-        versionName = "1.31"
+        versionCode = 33
+        versionName = "1.32"
 
         // 密码本来自本地 secrets.properties（不入库），编译期写入 BuildConfig
         buildConfigField(
             "String",
             "LOG_CODEBOOK",
             "\"${secretProps.getProperty("LOG_CODEBOOK") ?: "PLACEHOLDER_CODEBOOK"}\"",
-        )
-        // 使用统计后端（LeanCloud 免费开发版，无需域名/服务器），为空则统计关闭
-        buildConfigField(
-            "String",
-            "LEANCLOUD_BASE",
-            "\"${secretProps.getProperty("LEANCLOUD_BASE") ?: ""}\"",
-        )
-        buildConfigField(
-            "String",
-            "LEANCLOUD_ID",
-            "\"${secretProps.getProperty("LEANCLOUD_ID") ?: ""}\"",
-        )
-        buildConfigField(
-            "String",
-            "LEANCLOUD_KEY",
-            "\"${secretProps.getProperty("LEANCLOUD_KEY") ?: ""}\"",
         )
     }
 
