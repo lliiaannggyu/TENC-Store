@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Text
 import coil.compose.AsyncImage
 import com.tengwear.tengstore.ui.announcements.Announcement
 import com.tengwear.tengstore.ui.announcements.AnnouncementsStore

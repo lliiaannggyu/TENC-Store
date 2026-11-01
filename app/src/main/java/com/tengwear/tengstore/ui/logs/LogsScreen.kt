@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.logs
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,19 +15,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.SwitchButtonDefaults
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
@@ -48,16 +46,15 @@ fun LogsScreen(navController: NavHostController) {
         ActivityResultContracts.StartActivityForResult()
     ) { result -> parseTextInputResult(result.data)?.let { viewModel.setDescription(it) } }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("日志反馈") } }
 
             item {
-                Chip(
+                Button(
                     onClick = { launchTextInputSafely(descLauncher, "描述遇到的情况") },
                     label = { Text("描述情况") },
                     secondaryLabel = {
@@ -70,21 +67,15 @@ fun LogsScreen(navController: NavHostController) {
             }
 
             item {
-                ToggleChip(
+                SwitchButton(
                     checked = uiState.confirmed,
                     onCheckedChange = { viewModel.setConfirmed(it) },
-                    toggleControl = {
-                        Icon(
-                            imageVector = ToggleChipDefaults.switchIcon(uiState.confirmed),
-                            contentDescription = null,
-                        )
-                    },
                     label = { Text("我已确认情况属实") },
                 )
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.copyToClipboard(context) },
                     label = { Text("复制到剪贴板") },
                     icon = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
@@ -92,7 +83,7 @@ fun LogsScreen(navController: NavHostController) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.sendByEmail(context) },
                     label = { Text("邮箱发送日志") },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
@@ -118,7 +109,7 @@ fun LogsScreen(navController: NavHostController) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.clearLogs() },
                     label = { Text("清空日志") },
                 )

@@ -1,5 +1,10 @@
 package com.tengwear.tengstore.ui.inbox
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -14,20 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.dialog.Dialog
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.AlertDialog
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -50,16 +48,15 @@ fun InboxScreen(navController: NavHostController) {
 
     LaunchedEffect(Unit) { viewModel.refresh() }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("信息") } }
 
             if (uiState.loading) {
-                item { Chip(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("正在拉取信息…") }) }
+                item { Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("正在拉取信息…") }) }
             }
             uiState.error?.let { err ->
                 item { Text(err, modifier = Modifier.padding(8.dp)) }
@@ -75,7 +72,7 @@ fun InboxScreen(navController: NavHostController) {
 
             items(uiState.items.size) { i ->
                 val item = uiState.items[i]
-                Chip(
+                Button(
                     onClick = { detail = item },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = {
@@ -92,12 +89,12 @@ fun InboxScreen(navController: NavHostController) {
                         Text(item.body.lineSequence().firstOrNull { it.isNotBlank() } ?: "（日志）", maxLines = 1)
                     },
                     icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                    colors = ChipDefaults.primaryChipColors(),
+                    colors = ButtonDefaults.buttonColors(),
                 )
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.refresh() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !uiState.loading,
@@ -109,12 +106,13 @@ fun InboxScreen(navController: NavHostController) {
     }
 
     detail?.let { item ->
-        Dialog(
-            showDialog = true,
+        AlertDialog(
+            visible = true,
             onDismissRequest = { detail = null },
-        ) {
-            ScalingLazyColumn {
-                item {
+            confirmButton = {},
+            title = { Text("信息详情", maxLines = 1) },
+            text = {
+                Column {
                     Text(
                         buildString {
                             appendLine("发件人 ${item.from}")
@@ -124,14 +122,12 @@ fun InboxScreen(navController: NavHostController) {
                             item.sender?.let { appendLine("反馈人 $it") }
                         },
                     )
-                }
-                item {
                     Text(
                         item.body.ifBlank { "（正文为空）" },
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
-            }
-        }
+            },
+        )
     }
 }

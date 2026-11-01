@@ -2,6 +2,10 @@ package com.tengwear.tengstore.ui.downloads
 
 import android.content.Context
 import android.content.Intent
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,18 +28,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -59,10 +56,9 @@ fun DownloadsScreen(navController: NavHostController) {
         files = downloader.listDownloadedApks()
     }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(
             state = listState,
@@ -140,7 +136,7 @@ private fun LinearBar(progress: Float) {
 
 @Composable
 private fun DownloadedChip(file: File, onInstall: () -> Unit, onDelete: () -> Unit) {
-    Chip(
+    Button(
         onClick = onInstall,
         label = { Text(file.name, maxLines = 2) },
         secondaryLabel = { Text("点按安装 · ${formatSize(file.length())}", maxLines = 1) },

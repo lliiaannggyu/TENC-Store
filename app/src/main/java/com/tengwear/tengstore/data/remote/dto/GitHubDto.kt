@@ -10,6 +10,15 @@ data class SearchRepositoriesResponse(
     @SerializedName("items") val items: List<RepoDto> = emptyList(),
 )
 
+data class SearchUsersResponse(
+    @SerializedName("total_count") val totalCount: Int = 0,
+    @SerializedName("items") val items: List<UserDto> = emptyList(),
+)
+
+data class UserDto(
+    @SerializedName("login") val login: String,
+)
+
 data class RepoDto(
     @SerializedName("id") val id: Long,
     @SerializedName("name") val name: String,

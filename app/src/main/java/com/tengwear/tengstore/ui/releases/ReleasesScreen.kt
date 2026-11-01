@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.releases
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -10,18 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -37,10 +34,9 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
 
     LaunchedEffect(fullName) { viewModel.load(fullName) }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(
             state = listState,
@@ -52,7 +48,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
             }
 
             if (uiState.loading) {
-                item { Chip(onClick = {}, enabled = false, label = { Text("加载中…") }) }
+                item { Button(onClick = {}, enabled = false, label = { Text("加载中…") }) }
             }
 
             uiState.error?.let { err ->
@@ -79,7 +75,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
 @Composable
 private fun ReleaseChip(release: Release, onClick: () -> Unit) {
     val apkCount = release.assets.count { it.isApk }
-    Chip(
+    Button(
         onClick = onClick,
         enabled = apkCount > 0,
         label = { Text(release.tagName, maxLines = 1) },

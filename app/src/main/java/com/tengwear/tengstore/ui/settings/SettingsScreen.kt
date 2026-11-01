@@ -1,6 +1,9 @@
 package com.tengwear.tengstore.ui.settings
 
 import android.widget.Toast
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,21 +19,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.SwitchButtonDefaults
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -86,10 +83,9 @@ fun SettingsScreen(navController: NavHostController) {
         launchTextInputSafely(inputLauncher, label)
     }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("设置") } }
@@ -104,7 +100,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             // 应用内更新（GitHub Release，非强制）
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("update") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("检查更新", maxLines = 1) },
@@ -114,7 +110,7 @@ fun SettingsScreen(navController: NavHostController) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { ask(FIELD_TOKEN, "输入 GitHub 令牌（可选）") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("GitHub 令牌", maxLines = 1) },
@@ -123,7 +119,7 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { settings.setToken(null) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !token.isNullOrBlank(),
@@ -134,7 +130,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             item { ListHeader { Text("搜索关键词") } }
             item {
-                Chip(
+                Button(
                     onClick = { ask(FIELD_KEYWORDS, "输入关键词，用逗号分隔") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("关键词", maxLines = 1) },
@@ -143,15 +139,9 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
             item {
-                ToggleChip(
+                SwitchButton(
                     checked = keywordsEnabled,
                     onCheckedChange = { settings.setKeywordsEnabled(it) },
-                    toggleControl = {
-                        Icon(
-                            imageVector = ToggleChipDefaults.switchIcon(keywordsEnabled),
-                            contentDescription = null,
-                        )
-                    },
                     label = { Text("启用关键词过滤") },
                 )
             }
@@ -166,7 +156,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             item { ListHeader { Text("开发者") } }
             item {
-                Chip(
+                Button(
                     onClick = { ask(FIELD_DEV_EMAIL, "输入你的开发者邮箱") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("开发者邮箱", maxLines = 1) },
@@ -189,7 +179,7 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { ask(FIELD_SMTP_CODE, "输入 SMTP 授权码（不是登录密码）") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("SMTP 授权码", maxLines = 1) },
@@ -199,9 +189,9 @@ fun SettingsScreen(navController: NavHostController) {
             }
             if (developerEmail.isNotBlank() && smtpAuthCode.isNotBlank()) {
                 item {
-                    Chip(
+                    Button(
                         onClick = {
-                            if (verifying) return@Chip
+                            if (verifying) return@Button
                             verifying = true
                             scope.launch {
                                 val err = MailClient.send(
@@ -231,7 +221,7 @@ fun SettingsScreen(navController: NavHostController) {
                                 Icon(Icons.Default.Email, contentDescription = null)
                             }
                         },
-                        colors = ChipDefaults.primaryChipColors(),
+                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }

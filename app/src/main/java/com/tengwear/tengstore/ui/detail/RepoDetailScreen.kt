@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.detail
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,26 +19,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material3.CircularProgressIndicator
 import coil.compose.AsyncImage
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
@@ -56,10 +53,9 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
 
     LaunchedEffect(fullName) { viewModel.init(fullName) }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text(fullName.substringAfter("/")) } }
@@ -94,17 +90,17 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("releases/${fullName.replace("/", "~~")}") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = release != null,
                     label = { Text("下载", maxLines = 1) },
                     icon = { Icon(Icons.Default.Download, contentDescription = null) },
-                    colors = ChipDefaults.primaryChipColors(),
+                    colors = ButtonDefaults.buttonColors(),
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { settings.toggleFavorite(fullName) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(if (isFavorite) "取消收藏" else "收藏", maxLines = 1) },
@@ -115,9 +111,9 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
                         )
                     },
                     colors = if (isFavorite) {
-                        ChipDefaults.primaryChipColors()
+                        ButtonDefaults.buttonColors()
                     } else {
-                        ChipDefaults.secondaryChipColors()
+                        ButtonDefaults.filledTonalButtonColors()
                     },
                 )
             }
@@ -165,7 +161,7 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("返回", maxLines = 1) },

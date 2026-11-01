@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.assets
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -10,18 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
@@ -41,11 +38,7 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
     val apks = remember(release) { release?.assets?.filter { it.isApk } ?: emptyList() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(            timeText = { TimeText() },
-            vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-            positionIndicator = {
-                if (release != null) PositionIndicator(scalingLazyListState = listState)
-            },
+        ScreenScaffold(scrollState = listState,             timeText = { TimeText() },
         ) {
             ScalingLazyColumn(
                 state = listState,
@@ -94,7 +87,7 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
 
 @Composable
 private fun AssetChip(asset: Asset, onDownload: () -> Unit) {
-    Chip(
+    Button(
         onClick = onDownload,
         label = { Text(asset.name, maxLines = 2) },
         secondaryLabel = { Text(formatSize(asset.size), maxLines = 1) },

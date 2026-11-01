@@ -4,13 +4,13 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.ViewConfigurationCompat
-import androidx.wear.compose.material.ScalingLazyListState
 import kotlinx.coroutines.launch
 
 /**

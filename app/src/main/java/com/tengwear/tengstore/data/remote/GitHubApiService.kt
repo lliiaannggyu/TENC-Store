@@ -3,6 +3,7 @@ package com.tengwear.tengstore.data.remote
 import com.tengwear.tengstore.data.remote.dto.ReleaseDto
 import com.tengwear.tengstore.data.remote.dto.RepoDto
 import com.tengwear.tengstore.data.remote.dto.SearchRepositoriesResponse
+import com.tengwear.tengstore.data.remote.dto.SearchUsersResponse
 import okhttp3.ResponseBody
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -23,6 +24,21 @@ interface GitHubApiService {
         @Query("order") order: String = "desc",
         @Query("per_page") perPage: Int = 30,
     ): SearchRepositoriesResponse
+
+    /** 搜索 GitHub 用户（按用户名匹配）。 */
+    @GET("search/users")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Query("per_page") perPage: Int = 30,
+    ): SearchUsersResponse
+
+    /** 列出指定用户的公开仓库（用户仓库浏览）。 */
+    @GET("users/{user}/repos")
+    suspend fun listUserRepos(
+        @Path("user") user: String,
+        @Query("sort") sort: String = "updated",
+        @Query("per_page") perPage: Int = 100,
+    ): List<RepoDto>
 
     @GET("repos/{owner}/{repo}/releases")
     suspend fun listReleases(

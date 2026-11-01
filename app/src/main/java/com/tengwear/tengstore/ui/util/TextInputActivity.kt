@@ -45,11 +45,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 
 /**
  * 内置文本输入页（重新设计）：
@@ -237,7 +237,7 @@ private fun RoundActionButton(
         enabled = enabled,
         modifier = Modifier.size(52.dp),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = finalBg,
+            containerColor = finalBg,
             contentColor = finalTint,
         ),
     ) {

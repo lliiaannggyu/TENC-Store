@@ -1,6 +1,9 @@
 package com.tengwear.tengstore.ui.feedback
 
 import android.content.Context
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,21 +26,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.MaterialTheme
 
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
@@ -71,10 +68,9 @@ fun FeedbackScreen(
         parseTextInputResult(result.data)?.let { viewModel.setContent(it) }
     }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("反馈 · ${fullName.substringAfter("/")}"); } }
@@ -92,37 +88,37 @@ fun FeedbackScreen(
 
             item { ListHeader { Text("反馈类型") } }
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.setType(FeedbackType.SUGGESTION) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("建议", maxLines = 1) },
                     secondaryLabel = { Text(if (uiState.type == FeedbackType.SUGGESTION) "已选择" else "", maxLines = 1) },
                     icon = { Icon(Icons.Default.Lightbulb, contentDescription = null) },
                     colors = if (uiState.type == FeedbackType.SUGGESTION) {
-                        ChipDefaults.primaryChipColors()
+                        ButtonDefaults.buttonColors()
                     } else {
-                        ChipDefaults.secondaryChipColors()
+                        ButtonDefaults.filledTonalButtonColors()
                     },
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.setType(FeedbackType.BUG) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("Bug", maxLines = 1) },
                     secondaryLabel = { Text(if (uiState.type == FeedbackType.BUG) "已选择" else "", maxLines = 1) },
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
                     colors = if (uiState.type == FeedbackType.BUG) {
-                        ChipDefaults.primaryChipColors()
+                        ButtonDefaults.buttonColors()
                     } else {
-                        ChipDefaults.secondaryChipColors()
+                        ButtonDefaults.filledTonalButtonColors()
                     },
                 )
             }
 
             item { ListHeader { Text("反馈内容") } }
             item {
-                Chip(
+                Button(
                     onClick = {
                         launchTextInputSafely(contentLauncher, "输入反馈内容")
                     },
@@ -135,13 +131,13 @@ fun FeedbackScreen(
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.send(context) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !uiState.busy && devEmail.isNotBlank(),
                     label = { Text("发送反馈", maxLines = 1) },
                     icon = { Icon(Icons.Default.Send, contentDescription = null) },
-                    colors = ChipDefaults.primaryChipColors(),
+                    colors = ButtonDefaults.buttonColors(),
                 )
             }
         }
@@ -149,11 +145,11 @@ fun FeedbackScreen(
 
     // 发送提醒弹窗：发送中转圈，完成后显示结果，点确定关闭
     if (uiState.busy || uiState.notice != null) {
-        val chipsColor = ChipDefaults.primaryChipColors()
+        val chipsColor = ButtonDefaults.buttonColors()
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colors.background)
+                .background(MaterialTheme.colorScheme.background)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
@@ -182,7 +178,7 @@ fun FeedbackScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(12.dp))
-                    Chip(
+                    Button(
                         onClick = { viewModel.dismissDialog() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("确定", maxLines = 1) },

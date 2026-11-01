@@ -2,6 +2,9 @@ package com.tengwear.tengstore.ui.update
 
 import android.content.Context
 import android.content.Intent
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,19 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -61,10 +58,9 @@ fun UpdateScreen(navController: NavHostController) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("应用更新") } }
@@ -79,12 +75,12 @@ fun UpdateScreen(navController: NavHostController) {
             when (ui.phase) {
                 UpdateViewModel.Phase.IDLE -> {
                     item {
-                        Chip(
+                        Button(
                             onClick = { vm.check() },
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                             label = { Text("检查更新", maxLines = 1) },
                             icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
-                            colors = ChipDefaults.primaryChipColors(),
+                            colors = ButtonDefaults.buttonColors(),
                         )
                     }
                 }
@@ -162,25 +158,25 @@ fun UpdateScreen(navController: NavHostController) {
                         // 下载完成：安装
                         file != null -> {
                             item {
-                                Chip(
+                                Button(
                                     onClick = { installApk(context, file) },
                                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                                     label = { Text("安装新版本", maxLines = 1) },
                                     secondaryLabel = { Text(formatSize(file.length()), maxLines = 1) },
                                     icon = { Icon(Icons.Default.Android, contentDescription = null) },
-                                    colors = ChipDefaults.primaryChipColors(),
+                                    colors = ButtonDefaults.buttonColors(),
                                 )
                             }
                         }
                         // 待下载
                         else -> {
                             item {
-                                Chip(
+                                Button(
                                     onClick = { vm.download() },
                                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                                     label = { Text("下载更新", maxLines = 1) },
                                     icon = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
-                                    colors = ChipDefaults.primaryChipColors(),
+                                    colors = ButtonDefaults.buttonColors(),
                                 )
                             }
                         }
@@ -193,7 +189,7 @@ fun UpdateScreen(navController: NavHostController) {
 
 @Composable
 private fun RetryChip(vm: UpdateViewModel) {
-    Chip(
+    Button(
         onClick = { vm.check() },
         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
         label = { Text("重新检查", maxLines = 1) },

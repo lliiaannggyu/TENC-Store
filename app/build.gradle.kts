@@ -11,11 +11,12 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.parcelize")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.tengwear.tengstore"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.tengwear.tengstore"
@@ -23,8 +24,8 @@ android {
         // 从 30（Wear OS 3 专属）降低后可适配更多手表与安卓设备
         minSdk = 25
         targetSdk = 34
-        versionCode = 33
-        versionName = "1.32"
+        versionCode = 35
+        versionName = "1.34"
 
         // 密码本来自本地 secrets.properties（不入库），编译期写入 BuildConfig
         buildConfigField(
@@ -81,7 +82,6 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {
@@ -99,8 +99,8 @@ android {
 }
 
 dependencies {
-    val composeVersion = "1.6.7"
-    val wearComposeVersion = "1.3.1"
+    val composeVersion = "1.9.0"
+    val wearComposeVersion = "1.6.0"
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -112,10 +112,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics:$composeVersion")
     implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     implementation("androidx.compose.foundation:foundation:$composeVersion")
-    implementation("androidx.compose.material:material-icons-extended:$composeVersion")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // Wear OS official Material Design (Material Design for Wear OS) + navigation
-    implementation("androidx.wear.compose:compose-material:$wearComposeVersion")
+    implementation("androidx.wear.compose:compose-material3:$wearComposeVersion")
     implementation("androidx.wear.compose:compose-foundation:$wearComposeVersion")
     implementation("androidx.wear.compose:compose-navigation:$wearComposeVersion")
     // On-device voice / keyboard text input (the official Wear OS input pattern)

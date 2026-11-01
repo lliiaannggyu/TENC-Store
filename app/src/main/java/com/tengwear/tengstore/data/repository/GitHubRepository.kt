@@ -18,6 +18,18 @@ class GitHubRepository(private val api: GitHubApiService) {
         return api.searchRepositories(q).items.map { it.toDomain() }
     }
 
+    /** 搜索 GitHub 用户，返回用户名列表。 */
+    suspend fun searchUsers(query: String): List<String> {
+        val q = query.trim()
+        require(q.isNotBlank()) { "Query must not be blank" }
+        return api.searchUsers(q).items.map { it.login }
+    }
+
+    /** 列出指定用户的仓库（含私有仓库，需令牌有权限时 GitHub 自动附带）。 */
+    suspend fun userRepos(user: String): List<Repo> {
+        return api.listUserRepos(user).map { it.toDomain() }
+    }
+
     suspend fun releases(owner: String, repo: String): List<Release> {
         return api.listReleases(owner, repo)
             .map { it.toDomain() }

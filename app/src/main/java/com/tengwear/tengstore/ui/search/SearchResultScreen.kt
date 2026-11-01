@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.search
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,19 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -49,10 +46,9 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
 
     LaunchedEffect(query) { viewModel.search(query) }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         if (uiState.loading) {
             // 独立加载页：整页旋转进度 + 提示文字
@@ -74,7 +70,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
                     }
                 }
             }
-            return@Scaffold
+            return@ScreenScaffold
         }
 
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -111,7 +107,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.search(query) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("重新搜索", maxLines = 1) },
@@ -124,7 +120,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
 
 @Composable
 private fun RepoChip(repo: Repo, onClick: () -> Unit) {
-    Chip(
+    Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
         label = { Text(repo.name, maxLines = 1) },

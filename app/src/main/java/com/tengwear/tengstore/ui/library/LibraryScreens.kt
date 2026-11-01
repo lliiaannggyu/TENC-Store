@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.library
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -10,19 +14,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -40,10 +37,9 @@ fun FavoritesScreen(navController: NavHostController) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("收藏") } }
@@ -58,13 +54,13 @@ fun FavoritesScreen(navController: NavHostController) {
             } else {
                 items(favorites.sorted().size) { i ->
                     val fullName = favorites.sorted()[i]
-                    Chip(
+                    Button(
                         onClick = { navController.navigate("detail/${fullName.replace("/", "~~")}") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text(fullName.substringAfter("/"), maxLines = 1) },
                         secondaryLabel = { Text(fullName, maxLines = 1) },
                         icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-                        colors = ChipDefaults.primaryChipColors(),
+                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }
@@ -80,10 +76,9 @@ fun HistoryScreen(navController: NavHostController) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("历史记录") } }
@@ -98,7 +93,7 @@ fun HistoryScreen(navController: NavHostController) {
             } else {
                 items(history.size) { i ->
                     val fullName = history[i]
-                    Chip(
+                    Button(
                         onClick = { navController.navigate("detail/${fullName.replace("/", "~~")}") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text(fullName.substringAfter("/"), maxLines = 1) },
@@ -107,12 +102,12 @@ fun HistoryScreen(navController: NavHostController) {
                     )
                 }
                 item {
-                    Chip(
+                    Button(
                         onClick = { settings.clearHistory() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("清空历史", maxLines = 1) },
                         icon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                        colors = ChipDefaults.secondaryChipColors(),
+                        colors = ButtonDefaults.filledTonalButtonColors(),
                     )
                 }
             }

@@ -66,6 +66,18 @@ fun WearApp() {
                     .orEmpty()
                 SearchResultScreen(navController, query)
             }
+            composable("user_search/{query}") { backStackEntry ->
+                val query = backStackEntry.arguments?.getString("query")
+                    ?.let { runCatching { URLDecoder.decode(it, "UTF-8") }.getOrNull() }
+                    .orEmpty()
+                com.tengwear.tengstore.ui.users.UserSearchScreen(navController, query)
+            }
+            composable("user_repos/{user}") { backStackEntry ->
+                val user = backStackEntry.arguments?.getString("user")
+                    ?.let { runCatching { URLDecoder.decode(it, "UTF-8") }.getOrNull() }
+                    .orEmpty()
+                com.tengwear.tengstore.ui.users.UserReposScreen(navController, user)
+            }
             composable("market") {
                 MarketScreen(navController)
             }

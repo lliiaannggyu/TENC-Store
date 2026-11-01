@@ -1,5 +1,8 @@
 package com.tengwear.tengstore.ui.home
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -8,18 +11,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
@@ -45,10 +42,9 @@ fun HomeScreen(navController: NavHostController) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(
             state = listState,
@@ -62,7 +58,7 @@ fun HomeScreen(navController: NavHostController) {
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("search") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("搜索应用", maxLines = 1) },
@@ -70,7 +66,7 @@ fun HomeScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("testhub") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("测试项目", maxLines = 1) },
@@ -78,7 +74,7 @@ fun HomeScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("favorites") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("收藏", maxLines = 1) },
@@ -86,7 +82,7 @@ fun HomeScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("history") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("历史记录", maxLines = 1) },
@@ -94,7 +90,7 @@ fun HomeScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("inbox") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("信息", maxLines = 1) },
@@ -102,7 +98,7 @@ fun HomeScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("downloads") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("我的下载", maxLines = 1) },
@@ -110,7 +106,7 @@ fun HomeScreen(navController: NavHostController) {
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("upload") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("应用上传", maxLines = 1) },
@@ -119,7 +115,7 @@ fun HomeScreen(navController: NavHostController) {
             }
             if (settings.parseRepo(pushRepo) != null) {
                 item {
-                    Chip(
+                    Button(
                         onClick = { navController.navigate("releases/${pushRepo.trim().replace("/", "~~")}") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("服务端推送", maxLines = 1) },
@@ -128,7 +124,7 @@ fun HomeScreen(navController: NavHostController) {
                 }
             }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("settings") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("设置", maxLines = 1) },

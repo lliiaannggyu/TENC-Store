@@ -1,5 +1,9 @@
 package com.tengwear.tengstore.ui.upload
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,22 +18,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.SwitchButtonDefaults
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -73,10 +70,9 @@ fun UploadScreen(navController: NavHostController) {
         ActivityResultContracts.StartActivityForResult()
     ) { result -> parseTextInputResult(result.data)?.let { viewModel.setNote(it) } }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("应用上传") } }
@@ -90,12 +86,12 @@ fun UploadScreen(navController: NavHostController) {
                     )
                 }
                 item {
-                    Chip(
+                    Button(
                         onClick = { navController.navigate("settings") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("去设置授予令牌", maxLines = 1) },
                         icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                        colors = ChipDefaults.primaryChipColors(),
+                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
                 return@ScalingLazyColumn
@@ -105,7 +101,7 @@ fun UploadScreen(navController: NavHostController) {
             when {
                 uiState.reposLoading -> {
                     item {
-                        Chip(
+                        Button(
                             onClick = {},
                             enabled = false,
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
@@ -116,7 +112,7 @@ fun UploadScreen(navController: NavHostController) {
                 uiState.reposError != null -> {
                     item { Text(uiState.reposError ?: "", modifier = Modifier.padding(8.dp)) }
                     item {
-                        Chip(
+                        Button(
                             onClick = { viewModel.loadRepos() },
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                             label = { Text("重试", maxLines = 1) },
@@ -128,16 +124,16 @@ fun UploadScreen(navController: NavHostController) {
                     items(uiState.repos.size) { i ->
                         val repo = uiState.repos[i]
                         val selected = uiState.selectedRepo == repo
-                        Chip(
+                        Button(
                             onClick = { viewModel.selectRepo(repo) },
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                             label = { Text(repo, maxLines = 1) },
                             secondaryLabel = { Text(if (selected) "已选择" else "", maxLines = 1) },
                             icon = { Icon(Icons.Default.FolderOpen, contentDescription = null) },
                             colors = if (selected) {
-                                ChipDefaults.primaryChipColors()
+                                ButtonDefaults.buttonColors()
                             } else {
-                                ChipDefaults.secondaryChipColors()
+                                ButtonDefaults.filledTonalButtonColors()
                             },
                         )
                     }
@@ -146,7 +142,7 @@ fun UploadScreen(navController: NavHostController) {
 
             item { ListHeader { Text("选择 APK") } }
             item {
-                Chip(
+                Button(
                     onClick = { navController.navigate("filemanager") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("文件管理器", maxLines = 1) },
@@ -163,7 +159,7 @@ fun UploadScreen(navController: NavHostController) {
 
             item { ListHeader { Text("发布说明") } }
             item {
-                Chip(
+                Button(
                     onClick = { launchTextInputSafely(noteLauncher, "输入更新说明") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("填写更新说明", maxLines = 1) },
@@ -173,22 +169,16 @@ fun UploadScreen(navController: NavHostController) {
                 )
             }
             item {
-                ToggleChip(
+                SwitchButton(
                     checked = uiState.confirmed,
                     onCheckedChange = { viewModel.setConfirmed(it) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                    toggleControl = {
-                        Icon(
-                            imageVector = ToggleChipDefaults.switchIcon(uiState.confirmed),
-                            contentDescription = null,
-                        )
-                    },
                     label = { Text("确认按格式发布", maxLines = 1) },
                 )
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.publish() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !uiState.busy,
@@ -200,11 +190,11 @@ fun UploadScreen(navController: NavHostController) {
                             Icon(Icons.Default.CloudUpload, contentDescription = null)
                         }
                     },
-                    colors = ChipDefaults.primaryChipColors(),
+                    colors = ButtonDefaults.buttonColors(),
                 )
             }
             item {
-                Chip(
+                Button(
                     onClick = { viewModel.sendReportByEmail(context) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("邮箱托管发布记录", maxLines = 1) },

@@ -7,6 +7,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,19 +29,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -117,22 +114,21 @@ fun FileManagerScreen(navController: NavHostController) {
         }
     }
 
-    Scaffold(
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item { ListHeader { Text("选择 APK 文件") } }
 
             if (!granted) {
                 item {
-                    Chip(
+                    Button(
                         onClick = { requestAccess() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("授予文件访问权限", maxLines = 1) },
                         icon = { Icon(Icons.Default.FolderOpen, contentDescription = null) },
-                        colors = ChipDefaults.primaryChipColors(),
+                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
                 return@ScalingLazyColumn
@@ -146,7 +142,7 @@ fun FileManagerScreen(navController: NavHostController) {
             }
             if (dir != Environment.getExternalStorageDirectory()?.absolutePath) {
                 item {
-                    Chip(
+                    Button(
                         onClick = {
                             dir = File(dir).parent ?: dir
                             tick++
@@ -164,14 +160,14 @@ fun FileManagerScreen(navController: NavHostController) {
             items(entries.size) { i ->
                 val entry = entries[i]
                 if (entry.isDirectory) {
-                    Chip(
+                    Button(
                         onClick = { dir = entry.absolutePath; tick++ },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text(entry.name, maxLines = 1) },
                         icon = { Icon(Icons.Default.Folder, contentDescription = null) },
                     )
                 } else {
-                    Chip(
+                    Button(
                         onClick = {
                             navController.previousBackStackEntry
                                 ?.savedStateHandle?.set("picked_apk", entry.absolutePath)
@@ -181,13 +177,13 @@ fun FileManagerScreen(navController: NavHostController) {
                         label = { Text(entry.name, maxLines = 1) },
                         secondaryLabel = { Text(formatSize(entry.length()), maxLines = 1) },
                         icon = { Icon(Icons.Default.Android, contentDescription = null) },
-                        colors = ChipDefaults.primaryChipColors(),
+                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }
 
             item {
-                Chip(
+                Button(
                     onClick = { tick++ },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("刷新", maxLines = 1) },

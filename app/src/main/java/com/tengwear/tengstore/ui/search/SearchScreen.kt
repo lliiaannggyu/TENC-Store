@@ -1,5 +1,8 @@
 package com.tengwear.tengstore.ui.search
 
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,20 +14,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.collectAsState
@@ -55,10 +53,18 @@ fun SearchScreen(navController: NavHostController) {
         }
     }
 
-    Scaffold(
+    val userInputLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        parseTextInputResult(result.data)?.let { query ->
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            navController.navigate("user_search/$encoded")
+        }
+    }
+
+    ScreenScaffold(
+            scrollState = listState,
         timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = listState) },
     ) {
         ScalingLazyColumn(
             state = listState,
@@ -67,17 +73,26 @@ fun SearchScreen(navController: NavHostController) {
             item { ListHeader { Text("搜索应用") } }
 
             item {
-                Chip(
+                Button(
                     onClick = { launchTextInputSafely(inputLauncher, "搜索 GitHub 仓库") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("搜索仓库", maxLines = 1) },
                     icon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    colors = ChipDefaults.primaryChipColors(),
+                    colors = ButtonDefaults.buttonColors(),
                 )
             }
 
             item {
-                Chip(
+                Button(
+                    onClick = { launchTextInputSafely(userInputLauncher, "搜索 GitHub 用户") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("搜索用户", maxLines = 1) },
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                )
+            }
+
+            item {
+                Button(
                     onClick = { navController.navigate("settings") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("关键词设置", maxLines = 1) },
