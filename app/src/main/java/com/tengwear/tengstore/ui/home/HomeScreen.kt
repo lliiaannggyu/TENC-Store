@@ -22,7 +22,6 @@ import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Email
@@ -35,8 +34,8 @@ import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 
 /**
- * 主菜单：功能顺序按使用频率整理——
- * 搜索 → 测试项目 → 公告 → 信息 → 我的下载 → 应用上传 → 服务端推送 → 设置。
+ * 主菜单：顶部为公告轮播；列表顺序按使用频率——
+ * 搜索 → 测试项目 → 收藏 → 历史记录 → 信息 → 我的下载 → 应用上传 → 服务端推送 → 设置。
  */
 @Composable
 fun HomeScreen(navController: NavHostController) {
@@ -92,14 +91,6 @@ fun HomeScreen(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("历史记录", maxLines = 1) },
                     icon = { Icon(Icons.Default.History, contentDescription = null) },
-                )
-            }
-            item {
-                Chip(
-                    onClick = { navController.navigate("announcements") },
-                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                    label = { Text("公告", maxLines = 1) },
-                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
                 )
             }
             item {

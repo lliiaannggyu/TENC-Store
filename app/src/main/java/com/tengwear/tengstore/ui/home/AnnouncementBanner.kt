@@ -37,7 +37,7 @@ import com.tengwear.tengstore.ui.announcements.AnnouncementsStore
 
 /**
  * 主菜单顶部公告轮播：
- * 每页 = 公告仓库的 banner 图（无图则标题卡片）+ 底部标题，
+ * 每页 = 公告仓库的 banner 图（无图则标题卡片）+ 底部「公告」标签与标题，
  * 底部圆点指示器；点按任意一页进入公告详情页。
  * 无操作时每 4 秒自动轮播到下一页。
  */
@@ -131,18 +131,33 @@ private fun AnnouncementCard(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        // 底部叠加：标题
-        Text(
-            announcement.title,
+        // 底部叠加：公告标签 + 标题
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 6.dp),
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "公告",
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF3D82F0))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                color = Color.White,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                announcement.title,
+                modifier = Modifier.padding(start = 6.dp).weight(1f),
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
