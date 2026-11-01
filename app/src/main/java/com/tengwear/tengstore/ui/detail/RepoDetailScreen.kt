@@ -28,6 +28,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
@@ -51,6 +52,7 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
     val favorites by settings.favorites.collectAsState()
     val isFavorite = fullName in favorites
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     LaunchedEffect(fullName) { viewModel.init(fullName) }
 

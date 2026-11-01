@@ -23,6 +23,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Delete
@@ -37,6 +38,7 @@ fun FavoritesScreen(navController: NavHostController) {
     val settings = AppContainer.settings
     val favorites by settings.favorites.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     Scaffold(
         timeText = { TimeText() },
@@ -76,6 +78,7 @@ fun HistoryScreen(navController: NavHostController) {
     val settings = AppContainer.settings
     val history by settings.history.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     Scaffold(
         timeText = { TimeText() },

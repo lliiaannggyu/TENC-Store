@@ -37,6 +37,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CloudDownload
@@ -58,6 +59,7 @@ fun UpdateScreen(navController: NavHostController) {
     val ui by vm.state.collectAsState()
     val context = LocalContext.current
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     Scaffold(
         timeText = { TimeText() },

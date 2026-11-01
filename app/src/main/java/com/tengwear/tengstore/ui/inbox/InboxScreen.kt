@@ -28,6 +28,7 @@ import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.dialog.Dialog
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
@@ -44,6 +45,7 @@ fun InboxScreen(navController: NavHostController) {
     val uiState by viewModel.uiState.collectAsState()
     var detail by remember { mutableStateOf<InboxItem?>(null) }
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
     val timeFmt = remember { SimpleDateFormat("MM-dd HH:mm", Locale.CHINA) }
 
     LaunchedEffect(Unit) { viewModel.refresh() }

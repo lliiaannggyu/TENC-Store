@@ -30,6 +30,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CloudUpload
@@ -54,6 +55,7 @@ fun UploadScreen(navController: NavHostController) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     LaunchedEffect(Unit) { viewModel.onEnter() }
 

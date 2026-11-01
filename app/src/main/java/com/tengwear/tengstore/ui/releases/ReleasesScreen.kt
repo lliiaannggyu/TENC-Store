@@ -22,6 +22,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import com.tengwear.tengstore.data.AppContainer
@@ -32,6 +33,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
     val viewModel: ReleasesViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     LaunchedEffect(fullName) { viewModel.load(fullName) }
 

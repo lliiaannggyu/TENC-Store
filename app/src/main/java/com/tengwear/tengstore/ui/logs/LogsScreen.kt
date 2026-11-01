@@ -24,6 +24,7 @@ import androidx.wear.compose.material.ToggleChipDefaults
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Email
@@ -41,6 +42,7 @@ fun LogsScreen(navController: NavHostController) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     val descLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()

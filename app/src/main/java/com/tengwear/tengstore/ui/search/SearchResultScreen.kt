@@ -26,6 +26,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Refresh
@@ -44,6 +45,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
     val viewModel: SearchViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     LaunchedEffect(query) { viewModel.search(query) }
 

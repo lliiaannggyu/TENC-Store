@@ -23,6 +23,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -43,6 +44,7 @@ fun SearchScreen(navController: NavHostController) {
     val keywordsEnabled by settings.keywordsEnabled.collectAsState()
     val keywords by settings.keywords.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     val inputLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()

@@ -24,6 +24,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import coil.compose.AsyncImage
 import com.tengwear.tengstore.data.AppContainer
 
@@ -35,6 +36,7 @@ fun AnnouncementDetailScreen(navController: NavHostController, index: Int) {
     val viewModel: AnnouncementsViewModel = viewModel()
     val items by AnnouncementsStore.items.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
     val announcement = items?.getOrNull(index)
 
     Scaffold(

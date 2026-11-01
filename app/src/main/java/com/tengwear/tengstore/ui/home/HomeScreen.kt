@@ -20,6 +20,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CloudUpload
@@ -42,6 +43,7 @@ fun HomeScreen(navController: NavHostController) {
     val settings = AppContainer.settings
     val pushRepo by settings.pushRepo.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     Scaffold(
         timeText = { TimeText() },
@@ -52,8 +54,6 @@ fun HomeScreen(navController: NavHostController) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
-            item { ListHeader { Text("TENC Store") } }
-
             // 顶部公告轮播（索引公告仓库的图片 + 标题，点击看全文）
             item {
                 AnnouncementBanner(

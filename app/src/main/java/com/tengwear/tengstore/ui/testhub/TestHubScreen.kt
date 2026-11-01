@@ -31,6 +31,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowBack
@@ -53,6 +54,7 @@ fun TestHubScreen(navController: NavHostController) {
     val uiState by viewModel.uiState.collectAsState()
     var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     LaunchedEffect(Unit) { viewModel.load() }
 
@@ -131,6 +133,7 @@ private fun ProjectDetailScreen(
     onFeedback: () -> Unit,
 ) {
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
     val release = project.latest
     val apks = release?.apkAssets ?: emptyList()
 

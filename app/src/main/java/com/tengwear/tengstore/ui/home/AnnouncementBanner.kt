@@ -63,7 +63,7 @@ fun AnnouncementBanner(
             AnnouncementCard(
                 announcement = list[page],
                 onClick = { onOpen(page) },
-                modifier = Modifier.fillMaxWidth(0.96f).padding(horizontal = 5.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
             )
         }
 
@@ -79,20 +79,27 @@ fun AnnouncementBanner(
             }
         }
 
-        // 圆点指示器
+        // 圆点指示器（统一外框尺寸，保证左右对称、高亮居中）
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
             horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             repeat(list.size) { i ->
                 val active = i == pagerState.currentPage
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 3.dp)
-                        .size(width = if (active) 7.dp else 5.dp, height = if (active) 7.dp else 5.dp)
-                        .clip(CircleShape)
-                        .background(if (active) Color.White else Color.Gray.copy(alpha = 0.5f)),
-                )
+                        .size(7.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(if (active) 7.dp else 5.dp)
+                            .clip(CircleShape)
+                            .background(if (active) Color.White else Color.Gray.copy(alpha = 0.5f)),
+                    )
+                }
             }
         }
     }

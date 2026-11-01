@@ -36,6 +36,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.runtime.collectAsState
@@ -51,6 +52,7 @@ fun DownloadsScreen(navController: NavHostController) {
     var files by remember { mutableStateOf(downloader.listDownloadedApks()) }
     val active by DownloadTracker.active.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     // 下载进度变化 / 完成时刷新文件列表（完成后新文件即出现在列表中）
     androidx.compose.runtime.LaunchedEffect(active) {

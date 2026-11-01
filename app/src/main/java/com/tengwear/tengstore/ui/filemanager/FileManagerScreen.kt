@@ -38,6 +38,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.items
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Android
@@ -65,6 +66,7 @@ private fun hasStorageAccess(context: Context): Boolean = when {
 fun FileManagerScreen(navController: NavHostController) {
     val context = LocalContext.current
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
     var granted by rememberSaveable { mutableStateOf(hasStorageAccess(context)) }
     var dir by rememberSaveable {
         mutableStateOf(

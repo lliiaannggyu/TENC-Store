@@ -22,6 +22,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.runtime.collectAsState
@@ -35,6 +36,7 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
     val viewModel: DownloadViewModel = viewModel()
     val dlState by viewModel.state.collectAsState()
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     val apks = remember(release) { release?.assets?.filter { it.isApk } ?: emptyList() }
 

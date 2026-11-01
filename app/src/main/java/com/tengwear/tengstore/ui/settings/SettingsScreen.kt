@@ -31,6 +31,7 @@ import androidx.wear.compose.material.ToggleChipDefaults
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -62,6 +63,7 @@ fun SettingsScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     var verifying by rememberSaveable { mutableStateOf(false) }
     val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
 
     // 当前等待输入的字段。rememberSaveable：输入页可能压在应用上方，
     // 用 remember 会在页面回收后丢失字段标记，导致"输入了但保存不上"。
