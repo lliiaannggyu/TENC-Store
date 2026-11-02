@@ -30,6 +30,8 @@ import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.SwitchButtonDefaults
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
@@ -74,6 +76,8 @@ fun SettingsScreen(navController: NavHostController) {
             FIELD_KEYWORDS -> settings.setKeywords(value)
             FIELD_DEV_EMAIL -> saveDeveloperEmail(value)
             FIELD_SMTP_CODE -> settings.setSmtpAuthCode(value)
+            FIELD_TEST_HUB -> saveManagedRepo(value, isTestHub = true)
+            FIELD_ANNOUNCE -> saveManagedRepo(value, isTestHub = false)
         }
         AppContainer.log("设置", "已更新设置项：$pendingField")
     }
@@ -146,11 +150,29 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
 
-            item { ListHeader { Text("仓库配置") } }
+            item { ListHeader { Text("仓库管理") } }
             item {
                 Text(
-                    "仓库地址已内置（公告索引、测试项目索引等），无需手动配置。",
+                    "修改前会用你登录的令牌验证对该仓库的推送权限，应用内不保存任何内置令牌。",
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+            item {
+                Button(
+                    onClick = { ask(FIELD_TEST_HUB, "输入测试索引仓库 owner/repo") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("测试应用仓库", maxLines = 1) },
+                    secondaryLabel = { Text(settings.testHubRepo.value.ifBlank { "未配置" }, maxLines = 1) },
+                    icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                )
+            }
+            item {
+                Button(
+                    onClick = { ask(FIELD_ANNOUNCE, "输入公告仓库 owner/repo") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("公告仓库", maxLines = 1) },
+                    secondaryLabel = { Text(settings.announceRepo.value.ifBlank { "未配置" }, maxLines = 1) },
+                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
                 )
             }
 
@@ -246,3 +268,40 @@ private const val FIELD_TOKEN = "token"
 private const val FIELD_KEYWORDS = "keywords"
 private const val FIELD_DEV_EMAIL = "developer_email"
 private const val FIELD_SMTP_CODE = "smtp_auth_code"
+private const val FIELD_TEST_HUB = "test_hub_repo"
+private const val FIELD_ANNOUNCE = "announce_repo"
+
+/** 校验输入的 owner/repo，并用当前令牌验证推送权限，通过才保存。 */
+private fun saveManagedRepo(value: String, isTestHub: Boolean) {
+    val settings = AppContainer.settings
+    val repo = value.trim().removePrefix("https://github.com/").removeSuffix("/").trim('/')
+    val pattern = Regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    if (!pattern.matches(repo)) {
+        Toast.makeText(AppContainer.context, "格式应为 owner/repo，未保存", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val token = settings.currentToken()
+    if (token.isNullOrBlank()) {
+        Toast.makeText(AppContainer.context, "请先在设置里登录 GitHub 令牌再修改", Toast.LENGTH_LONG).show()
+        return
+    }
+    val owner = repo.substringBefore("/")
+    val name = repo.substringAfter("/")
+    AppContainer.appScope.launch {
+        val access = AppContainer.gitHubRepository.checkPushAccess(owner, name)
+        when (access) {
+            true -> {
+                if (isTestHub) settings.setTestHubRepo(repo) else settings.setAnnounceRepo(repo)
+                AppContainer.log("仓库管理", "已更新${if (isTestHub) "测试" else "公告"}仓库为 $repo（权限验证通过）")
+                Toast.makeText(AppContainer.context, "权限验证通过，已保存 $repo", Toast.LENGTH_SHORT).show()
+            }
+            false -> {
+                AppContainer.log("仓库管理", "令牌对 $repo 无推送权限，拒绝保存")
+                Toast.makeText(AppContainer.context, "当前令牌对该仓库没有推送权限，未保存", Toast.LENGTH_LONG).show()
+            }
+            null -> {
+                Toast.makeText(AppContainer.context, "无法验证权限（网络问题），未保存", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}

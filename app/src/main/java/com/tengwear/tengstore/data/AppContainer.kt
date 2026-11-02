@@ -22,6 +22,12 @@ object AppContainer {
     lateinit var context: Context
         private set
 
+    /** 应用级协程作用域（设置保存验证等后台任务用）。 */
+    val appScope: kotlinx.coroutines.CoroutineScope =
+        kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
+        )
+
     fun init(context: Context) {
         this.context = context.applicationContext
         settings = AppSettings(context.applicationContext)

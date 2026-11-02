@@ -2,6 +2,7 @@ package com.tengwear.tengstore.data.remote
 
 import com.tengwear.tengstore.data.remote.dto.ReleaseDto
 import com.tengwear.tengstore.data.remote.dto.RepoDto
+import com.tengwear.tengstore.data.remote.dto.RepoPermissionDto
 import com.tengwear.tengstore.data.remote.dto.SearchRepositoriesResponse
 import com.tengwear.tengstore.data.remote.dto.SearchUsersResponse
 import okhttp3.ResponseBody
@@ -40,6 +41,13 @@ interface GitHubApiService {
         @Query("sort") sort: String = "updated",
         @Query("per_page") perPage: Int = 100,
     ): List<RepoDto>
+
+    /** 查询仓库及当前令牌对其的权限（管理入口验证用，不内置任何令牌）。 */
+    @GET("repos/{owner}/{repo}")
+    suspend fun getRepo(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+    ): RepoPermissionDto
 
     @GET("repos/{owner}/{repo}/releases")
     suspend fun listReleases(

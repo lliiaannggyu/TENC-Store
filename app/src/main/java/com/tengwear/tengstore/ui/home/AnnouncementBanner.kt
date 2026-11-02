@@ -62,11 +62,16 @@ fun AnnouncementBanner(
             state = pagerState,
             modifier = Modifier.fillMaxWidth(),
         ) { page ->
-            AnnouncementCard(
-                announcement = list[page],
-                onClick = { onOpen(page) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                AnnouncementCard(
+                    announcement = list[page],
+                    onClick = { onOpen(page) },
+                    modifier = Modifier.fillMaxWidth(0.85f),
+                )
+            }
         }
 
         // 自动轮播：每 4 秒翻到下一页（用户正在滑动时暂停）

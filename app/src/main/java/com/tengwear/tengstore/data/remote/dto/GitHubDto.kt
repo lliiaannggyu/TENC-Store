@@ -19,6 +19,16 @@ data class UserDto(
     @SerializedName("login") val login: String,
 )
 
+/** 仓库权限（用于校验当前令牌能否管理该仓库）。 */
+data class RepoPermissionDto(
+    @SerializedName("permissions") val permissions: RepoPermsDto? = null,
+)
+
+data class RepoPermsDto(
+    @SerializedName("push") val push: Boolean = false,
+    @SerializedName("admin") val admin: Boolean = false,
+)
+
 data class RepoDto(
     @SerializedName("id") val id: Long,
     @SerializedName("name") val name: String,

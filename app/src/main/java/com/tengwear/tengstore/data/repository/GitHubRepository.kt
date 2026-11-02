@@ -18,6 +18,23 @@ class GitHubRepository(private val api: GitHubApiService) {
         return api.searchRepositories(q, page = page, perPage = perPage).items.map { it.toDomain() }
     }
 
+    /**
+     * 校验当前令牌对仓库是否有推送/管理权限。
+     * 返回 true=有权限；false=无权限（仓库不存在或非协作者）；null=无法验证（网络等）。
+     * 注意：用调用者自己已登录的令牌验证，应用内不保存任何内置令牌。
+     */
+    suspend fun checkPushAccess(owner: String, repo: String): Boolean? {
+        return try {
+            val dto = api.getRepo(owner, repo)
+            val perms = dto.permissions
+            perms?.push == true || perms?.admin == true
+        } catch (e: retrofit2.HttpException) {
+            if (e.code() in listOf(401, 403, 404)) false else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** 搜索 GitHub 用户，返回用户名列表。 */
     suspend fun searchUsers(query: String): List<String> {
         val q = query.trim()
