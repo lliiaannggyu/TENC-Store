@@ -12,10 +12,10 @@ import com.tengwear.tengstore.domain.model.Repo
  */
 class GitHubRepository(private val api: GitHubApiService) {
 
-    suspend fun search(query: String): List<Repo> {
+    suspend fun search(query: String, page: Int = 1, perPage: Int = 30): List<Repo> {
         val q = query.trim()
         require(q.isNotBlank()) { "Query must not be blank" }
-        return api.searchRepositories(q).items.map { it.toDomain() }
+        return api.searchRepositories(q, page = page, perPage = perPage).items.map { it.toDomain() }
     }
 
     /** 搜索 GitHub 用户，返回用户名列表。 */

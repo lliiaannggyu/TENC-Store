@@ -61,6 +61,16 @@ class AppSettings(private val context: Context) {
     private val _favorites = MutableStateFlow(prefs.getStringSet(KEY_FAVORITES, emptySet()).orEmpty())
     val favorites = _favorites.asStateFlow()
 
+    /** 随机抽取：历史上已抽过的仓库（owner/repo），避免重复抽中。 */
+    private val _drawnRepos = MutableStateFlow(prefs.getStringSet(KEY_DRAWN_REPOS, emptySet()).orEmpty())
+    val drawnRepos = _drawnRepos.asStateFlow()
+
+    fun addDrawnRepo(fullName: String) {
+        val next = _drawnRepos.value + fullName
+        prefs.edit().putStringSet(KEY_DRAWN_REPOS, next).apply()
+        _drawnRepos.value = next
+    }
+
     /** 浏览历史（owner/repo，最新在前，最多 20 条）。 */
     private val _history = MutableStateFlow(
         readString(KEY_HISTORY)?.split("\n")?.filter { it.isNotBlank() }.orEmpty(),
@@ -162,6 +172,7 @@ class AppSettings(private val context: Context) {
         private const val KEY_MESSAGE_PASSWORD = "message_password"
         private const val KEY_LAST_PUSH_ID = "last_push_release_id"
         private const val KEY_FAVORITES = "favorite_repos"
+        private const val KEY_DRAWN_REPOS = "drawn_repos"
         private const val KEY_HISTORY = "browse_history"
 
         /** 浏览历史上限。 */

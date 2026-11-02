@@ -122,7 +122,7 @@ fun TestHubScreen(navController: NavHostController) {
 
 /** 项目详情：包名（APK 包）、体积、开发者等信息 + 下载 / 反馈按钮。 */
 @Composable
-private fun ProjectDetailScreen(
+internal fun ProjectDetailScreen(
     project: TestProject,
     onBack: () -> Unit,
     onDownload: () -> Unit,
@@ -238,7 +238,7 @@ private fun ProjectDetailScreen(
 }
 
 @Composable
-private fun ProjectChip(project: TestProject, onClick: () -> Unit) {
+internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
     when {
         project.loading -> {
             Button(
