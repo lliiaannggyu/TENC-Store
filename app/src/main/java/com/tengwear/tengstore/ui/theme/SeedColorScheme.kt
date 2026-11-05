@@ -168,3 +168,12 @@ internal fun defaultWearColorScheme(): ColorScheme {
         outline = Color(0xFF8E9099),
     )
 }
+
+/** 取色的内容前景色（黑 / 白），用于在任意底色的色块上画对勾（移植自 AppOpsPro）。 */
+fun contentOn(background: Color): Color {
+    // 相对亮度（sRGB → 线性后按 Rec.709 加权）
+    val l = 0.2126f * srgbToLinear(background.red) +
+        0.7152f * srgbToLinear(background.green) +
+        0.0722f * srgbToLinear(background.blue)
+    return if (l > 0.5f) Color.Black else Color.White
+}

@@ -2,8 +2,8 @@
 -keepattributes *Annotation*
 
 # --- Gson: reflection on DTO fields ---
--keep class com.example.weargithubstore.data.remote.dto.** { *; }
--keep class com.example.weargithubstore.domain.model.** { *; }
+-keep class com.tengwear.tengstore.data.remote.dto.** { *; }
+-keep class com.tengwear.tengstore.domain.model.** { *; }
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
@@ -33,3 +33,8 @@
 -keep class gnu.mail.** { *; }
 -keep class com.sun.activation.** { *; }
 -keep class javax.activation.** { *; }
+
+# --- Coil（图片加载） ---
+-dontwarn coil.**
+-keep class coil.** { *; }
+-keep interface coil.** { *; }

@@ -24,6 +24,7 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollPro
 import androidx.wear.compose.material3.LocalContentColor
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.transformedHeight
 
 // ── 堆叠层次感（stacked elevation）──────────────────────────────────────
 // 移植自 AppOpsPro 的 StackedShadow.kt：给被叠住的上方卡片叠投影阴影——
@@ -138,9 +139,10 @@ fun TransformingLazyColumnItemScope.BarCapsule(
     }
 }
 
-/** 堆叠列表标准条目的便捷封装：中性灰底（surfaceContainerHigh）。 */
+/** 堆叠列表标准条目的便捷封装：中性灰底（surfaceContainerHigh）+ transformedHeight 堆叠驱动。 */
 @Composable
 fun TransformingLazyColumnItemScope.StackedCapsule(
+    spec: androidx.wear.compose.material3.lazy.TransformationSpec,
     onClick: (() -> Unit)? = null,
     leading: (@Composable () -> Unit)? = null,
     label: @Composable () -> Unit,
@@ -151,6 +153,9 @@ fun TransformingLazyColumnItemScope.StackedCapsule(
         containerColor = scheme.surfaceContainerHigh,
         contentColor = scheme.onSurface,
         secondaryContentColor = scheme.onSurfaceVariant,
+        // 堆叠变换的核心：随滚动进度收窄（AppOpsPro 各列表项均挂 transformedHeight，
+        // 只靠 stackedShadow 没有收窄/变暗过渡，堆叠感不成立）
+        modifier = Modifier.transformedHeight(this, spec),
         onClick = onClick,
         leading = leading,
         label = label,

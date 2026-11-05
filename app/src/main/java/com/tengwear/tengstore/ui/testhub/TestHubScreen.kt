@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.formatSize
 
 /**
@@ -247,7 +249,7 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
                 secondaryLabel = { Text("加载中…", maxLines = 1) },
-                icon = { Icon(Icons.Default.Android, contentDescription = null) },
+                icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
             )
         }
         project.error != null -> {
@@ -256,7 +258,7 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
                 secondaryLabel = { Text(project.error ?: "", maxLines = 1) },
-                icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
                 colors = ButtonDefaults.filledTonalButtonColors(),
             )
         }
@@ -279,7 +281,7 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
                         maxLines = 1,
                     )
                 },
-                icon = { Icon(Icons.Default.Android, contentDescription = null) },
+                icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
                 colors = ButtonDefaults.buttonColors(),
             )
         }

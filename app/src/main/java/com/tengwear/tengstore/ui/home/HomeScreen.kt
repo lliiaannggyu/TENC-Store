@@ -43,10 +43,10 @@ import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.testhub.ProjectDetailScreen
 import com.tengwear.tengstore.ui.testhub.TestProject
 import com.tengwear.tengstore.ui.testhub.TestHubViewModel
+import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import com.tengwear.tengstore.ui.util.StackedCapsule
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Email
@@ -177,9 +177,9 @@ private fun TestPage(navController: NavHostController) {
         }
         items(uiState.projects.size) { i ->
             val project = uiState.projects[i]
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { selected = project },
-                leading = { Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                leading = { RepoIcon(project.fullName, Modifier.size(18.dp)) },
                 label = {
                     Text(
                         project.fullName.substringAfter("/"),
@@ -200,7 +200,7 @@ private fun TestPage(navController: NavHostController) {
         }
         if (uiState.projects.isNotEmpty()) {
             item {
-                StackedCapsule(
+                StackedCapsule(spec,
                     onClick = { navController.navigate("testhub") },
                     leading = { Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     label = { Text("查看全部", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
@@ -236,14 +236,14 @@ private fun SearchPage(navController: NavHostController) {
         item { StackedHeader("GitHub 搜索", spec) }
 
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("search") },
                 leading = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("搜索仓库", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
             )
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = {
                     com.tengwear.tengstore.ui.util.launchTextInputSafely(userInputLauncher, "搜索 GitHub 用户")
                 },
@@ -252,7 +252,7 @@ private fun SearchPage(navController: NavHostController) {
             )
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = {
                     drawViewModel.draw { fullName ->
                         navController.navigate("detail/${fullName.replace("/", "~~")}")
@@ -266,20 +266,13 @@ private fun SearchPage(navController: NavHostController) {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     )
                 },
-                secondaryLabel = {
-                    Text(
-                        if (drawState.busy) "正在找含 APK 的项目" else "只抽带 APK 的项目，不重复",
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    )
-                },
             )
         }
         drawState.error?.let { err ->
             item { Text(err, modifier = Modifier.padding(8.dp)) }
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("settings") },
                 leading = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("关键词设置", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
@@ -305,35 +298,35 @@ private fun MorePage(navController: NavHostController) {
         item { StackedHeader("更多功能", spec) }
 
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("favorites") },
                 leading = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("收藏", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
             )
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("history") },
                 leading = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("历史记录", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
             )
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("inbox") },
                 leading = { Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("信息", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
             )
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("downloads") },
                 leading = { Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("我的下载", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
             )
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("upload") },
                 leading = { Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("应用上传", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
@@ -341,7 +334,7 @@ private fun MorePage(navController: NavHostController) {
         }
         if (settings.parseRepo(pushRepo) != null) {
             item {
-                StackedCapsule(
+                StackedCapsule(spec,
                     onClick = { navController.navigate("releases/${pushRepo.trim().replace("/", "~~")}") },
                     leading = { Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     label = { Text("服务端推送", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
@@ -349,7 +342,7 @@ private fun MorePage(navController: NavHostController) {
             }
         }
         item {
-            StackedCapsule(
+            StackedCapsule(spec,
                 onClick = { navController.navigate("settings") },
                 leading = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("设置", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },

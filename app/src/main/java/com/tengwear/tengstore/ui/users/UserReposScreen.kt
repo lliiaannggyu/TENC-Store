@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -102,6 +103,9 @@ fun UserReposScreen(navController: NavHostController, user: String) {
                             else "${repo.name} · ${repo.description}",
                             maxLines = 2,
                         )
+                    },
+                    icon = {
+                        com.tengwear.tengstore.ui.util.RepoIcon(repo.fullName, Modifier.size(22.dp))
                     },
                 )
             }

@@ -69,7 +69,8 @@ fun AnnouncementBanner(
                 AnnouncementCard(
                     announcement = list[page],
                     onClick = { onOpen(page) },
-                    modifier = Modifier.fillMaxWidth(0.85f),
+                    // 16:9 小横幅：圆屏上 4:3 大图会上下溢出（顶部压 TimeText、底部出屏）
+                    modifier = Modifier.fillMaxWidth(0.68f),
                 )
             }
         }
@@ -122,8 +123,8 @@ private fun AnnouncementCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(4f / 3f)
-            .clip(RoundedCornerShape(14.dp))
+            .aspectRatio(16f / 9f)
+            .clip(RoundedCornerShape(12.dp))
             .background(Color(0xFF202124))
             .clickable(onClick = onClick),
     ) {
