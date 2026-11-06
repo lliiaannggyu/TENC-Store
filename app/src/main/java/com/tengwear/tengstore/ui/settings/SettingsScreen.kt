@@ -413,7 +413,9 @@ private fun TestContentManager() {
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(scheme.surfaceContainerLow),
+            .background(scheme.surfaceContainerLow)
+            // 表格内部上下留白：首行/末行不贴圆角边
+            .padding(vertical = 6.dp),
     ) {
         when {
             busy -> Row(
