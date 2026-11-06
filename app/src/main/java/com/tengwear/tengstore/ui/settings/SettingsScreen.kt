@@ -298,7 +298,10 @@ private fun TestContentManager() {
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<String?>(null) }
-    var askAdd by remember { mutableStateOf(false) }
+    var formVisible by remember { mutableStateOf(false) }
+    var formLink by rememberSaveable { mutableStateOf("") }
+    var formEmail by rememberSaveable { mutableStateOf("") }
+    var formField by remember { mutableStateOf("") }
 
     fun display(line: String): String = DevMailCipher.parseRepo(line)?.first ?: line.trim()
 
@@ -361,29 +364,47 @@ private fun TestContentManager() {
         }
     }
 
-    fun addEntry(value: String) {
-        val fullName = value.trim()
+    /** 确认添加：解析链接 + 校验邮箱，生成「链接 [dev:加密邮箱]」一行写入索引。 */
+    fun confirmAdd() {
+        val fullName = formLink.trim()
             .removePrefix("https://github.com/").removePrefix("http://github.com/")
             .removeSuffix("/").removeSuffix(".git").trim('/')
         if (!Regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$").matches(fullName)) {
-            Toast.makeText(AppContainer.context, "格式应为 owner/repo，未添加", Toast.LENGTH_SHORT).show()
+            Toast.makeText(AppContainer.context, "请先填写正确的仓库链接", Toast.LENGTH_SHORT).show()
             return
         }
         if (lines?.any { display(it) == fullName } == true) {
             Toast.makeText(AppContainer.context, "该测试应用已在列表中", Toast.LENGTH_SHORT).show()
             return
         }
-        rewrite(fullName + "\n", "已添加 $fullName")
+        val email = formEmail.trim()
+        if (email.isNotEmpty() && !EMAIL_REGEX.matches(email)) {
+            Toast.makeText(AppContainer.context, "邮箱格式不正确", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val line = buildString {
+            append("https://github.com/").append(fullName)
+            if (email.isNotEmpty()) append(" ").append(DevMailCipher.encode(email))
+        }
+        rewrite(line + "\n", "已添加 $fullName")
+        formLink = ""
+        formEmail = ""
+        formVisible = false
     }
 
-    val addLauncher = rememberLauncherForActivityResult(
+    val formLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val value = parseTextInputResult(result.data) ?: return@rememberLauncherForActivityResult
-        if (askAdd) {
-            askAdd = false
-            addEntry(value)
+        when (formField) {
+            "link" -> formLink = value
+            "email" -> formEmail = value
         }
+    }
+
+    fun askField(field: String, label: String) {
+        formField = field
+        launchTextInputSafely(formLauncher, label)
     }
 
     val scheme = MaterialTheme.colorScheme
@@ -422,7 +443,7 @@ private fun TestContentManager() {
                 if (i > 0) TableDivider()
                 SwipeDeleteRow(
                     label = display(line),
-                    value = "",
+                    value = DevMailCipher.decodeFromLine(line) ?: "",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     deleteContentDesc = "删除测试应用",
                     onSwipePastThreshold = { pendingDelete = line },
@@ -430,13 +451,30 @@ private fun TestContentManager() {
             }
         }
         if (!busy && error == null) {
-            TableDivider()
-            TableActionRow(
-                label = "添加测试应用",
-                icon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            ) {
-                askAdd = true
-                launchTextInputSafely(addLauncher, "输入要添加的仓库 owner/repo 或链接")
+            if (formVisible) {
+                TableDivider()
+                TableFieldRow(
+                    label = "仓库链接",
+                    value = formLink,
+                    hint = "点按输入链接或 owner/repo",
+                ) { askField("link", "输入测试应用仓库链接") }
+                TableDivider()
+                TableFieldRow(
+                    label = "开发者邮箱",
+                    value = formEmail,
+                    hint = "可留空，反馈将发往此邮箱",
+                ) { askField("email", "输入项目开发者邮箱（可留空）") }
+                TableDivider()
+                TableActionRow(
+                    label = "确认添加",
+                    icon = { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                ) { confirmAdd() }
+            } else {
+                TableDivider()
+                TableActionRow(
+                    label = "添加测试应用",
+                    icon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                ) { formVisible = true }
             }
         }
     }
@@ -578,6 +616,38 @@ private fun SwipeDeleteRow(
                 modifier = Modifier.padding(start = 8.dp).weight(1f),
             )
         }
+    }
+}
+
+/** 表格中的输入字段行：左侧字段名，右侧当前值或提示，点按进入输入。 */
+@Composable
+private fun TableFieldRow(
+    label: String,
+    value: String,
+    hint: String,
+    onClick: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+        )
+        Text(
+            value.ifBlank { hint },
+            style = MaterialTheme.typography.labelSmall,
+            color = if (value.isBlank()) scheme.onSurfaceVariant else scheme.primary,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 8.dp).weight(1f),
+        )
     }
 }
 
