@@ -76,6 +76,26 @@ fun RepoDto.toDomain(): Repo = Repo(
     language = language,
 )
 
+/** Contents API：文件元信息（取 sha 用于更新文件）。 */
+data class ContentInfoDto(
+    val sha: String = "",
+    @SerializedName("type") val type: String? = null,
+)
+
+/** Contents API：更新文件请求体（content 为 Base64）。 */
+data class PutFileRequest(
+    val message: String,
+    val content: String,
+    val sha: String? = null,
+)
+
+/** Contents API：更新文件响应（只需 commit）。 */
+data class PutFileResponse(
+    @SerializedName("commit") val commit: PutFileCommitDto? = null,
+)
+
+data class PutFileCommitDto(val sha: String = "")
+
 fun ReleaseDto.toDomain(): Release = Release(
     id = id,
     tagName = tagName,

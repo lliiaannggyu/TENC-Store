@@ -64,6 +64,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import com.tengwear.tengstore.BuildConfig
 import com.tengwear.tengstore.data.AppContainer
+import com.tengwear.tengstore.data.DevMailCipher
 import com.tengwear.tengstore.data.MailClient
 import com.tengwear.tengstore.ui.theme.ThemePrefs
 import com.tengwear.tengstore.ui.theme.ThemeSeed
@@ -78,7 +79,7 @@ import com.tengwear.tengstore.ui.util.edgeSpacers
 
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
-/** 设置页：令牌 / 关键词及开关 / 仓库管理（表格 + 左滑删除）/ 主题配色 / 开发者邮箱。 */
+/** 设置页：令牌 / 关键词及开关 / 仓库设置 / 测试应用内容管理（左滑删除）/ 主题配色 / 开发者邮箱。 */
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val settings = AppContainer.settings
@@ -117,9 +118,6 @@ fun SettingsScreen(navController: NavHostController) {
         pendingField = field
         launchTextInputSafely(inputLauncher, label)
     }
-
-    // 待二次确认的删除项（type, repo）
-    var pendingDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     ScreenScaffold(
             scrollState = listState,
@@ -187,20 +185,28 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
 
-            item { ListHeader { Text("仓库管理") } }
+            item { ListHeader { Text("仓库设置") } }
             item {
-                RepoTable(
-                    testHubRepo = testHubRepo,
-                    announceRepo = announceRepo,
-                    onAdd = { isTestHub ->
-                        ask(
-                            if (isTestHub) FIELD_TEST_HUB else FIELD_ANNOUNCE,
-                            if (isTestHub) "输入测试索引仓库 owner/repo" else "输入公告仓库 owner/repo",
-                        )
-                    },
-                    onDelete = { type, repo -> pendingDelete = type to repo },
+                Button(
+                    onClick = { ask(FIELD_TEST_HUB, "输入测试索引仓库 owner/repo") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("测试应用仓库", maxLines = 1) },
+                    secondaryLabel = { Text(testHubRepo.ifBlank { "未设置" }, maxLines = 1) },
+                    icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
                 )
             }
+            item {
+                Button(
+                    onClick = { ask(FIELD_ANNOUNCE, "输入公告仓库 owner/repo") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("公告仓库", maxLines = 1) },
+                    secondaryLabel = { Text(announceRepo.ifBlank { "未设置" }, maxLines = 1) },
+                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
+                )
+            }
+
+            item { ListHeader { Text("测试应用管理") } }
+            item { TestContentManager() }
 
             item { ListHeader { Text("主题配色") } }
             item { ThemeColorRow() }
@@ -276,49 +282,110 @@ fun SettingsScreen(navController: NavHostController) {
                 }
             }
         }
-
-        // 删除二次确认（全盘删除前的对话框确认）
-        pendingDelete?.let { (type, repo) ->
-            AlertDialog(
-                visible = true,
-                onDismissRequest = { pendingDelete = null },
-                title = { Text("删除仓库") },
-                text = { Text("确定删除$type「$repo」吗？删除后需重新添加。") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (type == "测试应用仓库") settings.setTestHubRepo("")
-                            else settings.setAnnounceRepo("")
-                            AppContainer.log("仓库管理", "已删除$type：$repo")
-                            Toast.makeText(AppContainer.context, "已删除 $repo", Toast.LENGTH_SHORT).show()
-                            pendingDelete = null
-                        },
-                        label = { Text("删除") },
-                        colors = ButtonDefaults.buttonColors(),
-                    )
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { pendingDelete = null },
-                        label = { Text("取消") },
-                    )
-                },
-            )
-        }
     }
 }
 
 /**
- * 仓库管理表格：每行一条仓库（类型 + 地址），左滑露出红色删除按钮，
- * 松手弹出对话框二次确认后才真正删除；末尾两行是添加入口。
+ * 测试应用内容管理：列表展示测试索引仓库 repos.txt 的每个条目（表格样式），
+ * 左滑出删除按钮，二次确认后改写 repos.txt；末尾提供添加入口（同样改写文件）。
  */
 @Composable
-private fun RepoTable(
-    testHubRepo: String,
-    announceRepo: String,
-    onAdd: (Boolean) -> Unit,
-    onDelete: (String, String) -> Unit,
-) {
+private fun TestContentManager() {
+    val settings = AppContainer.settings
+    val hubRepo by settings.testHubRepo.collectAsState()
+    val scope = rememberCoroutineScope()
+    var lines by remember { mutableStateOf<List<String>?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<String?>(null) }
+    var askAdd by remember { mutableStateOf(false) }
+
+    fun display(line: String): String = DevMailCipher.parseRepo(line)?.first ?: line.trim()
+
+    fun load() {
+        val parts = settings.parseRepo(hubRepo)
+        if (parts == null) {
+            lines = emptyList()
+            error = "先在上方设置测试应用仓库"
+            return
+        }
+        scope.launch {
+            busy = true
+            val r = runCatching {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    AppContainer.gitHubRepository.fileWithSha(parts.first, parts.second, "repos.txt")
+                }
+            }
+            busy = false
+            r.onSuccess { (text, _) ->
+                error = null
+                lines = text.lineSequence()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() && !it.startsWith("#") }
+                    .toList()
+            }.onFailure { e ->
+                error = "读取失败：${e.message?.take(80)}"
+                lines = emptyList()
+            }
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(hubRepo) { load() }
+
+    fun rewrite(newText: String, successMsg: String) {
+        val parts = settings.parseRepo(hubRepo) ?: return
+        scope.launch {
+            busy = true
+            val r = runCatching {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val (_, sha) = AppContainer.gitHubRepository
+                        .fileWithSha(parts.first, parts.second, "repos.txt")
+                    AppContainer.gitHubRepository.updateTextFile(
+                        parts.first, parts.second, "repos.txt", sha, newText,
+                        "chore: TENC Store 应用内管理测试应用列表",
+                    )
+                }
+            }
+            busy = false
+            if (r.isSuccess) {
+                Toast.makeText(AppContainer.context, successMsg, Toast.LENGTH_SHORT).show()
+                AppContainer.log("测试应用管理", successMsg)
+            } else {
+                Toast.makeText(
+                    AppContainer.context,
+                    "写入失败：${r.exceptionOrNull()?.message?.take(60) ?: "未知错误"}",
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+            load()
+        }
+    }
+
+    fun addEntry(value: String) {
+        val fullName = value.trim()
+            .removePrefix("https://github.com/").removePrefix("http://github.com/")
+            .removeSuffix("/").removeSuffix(".git").trim('/')
+        if (!Regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$").matches(fullName)) {
+            Toast.makeText(AppContainer.context, "格式应为 owner/repo，未添加", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (lines?.any { display(it) == fullName } == true) {
+            Toast.makeText(AppContainer.context, "该测试应用已在列表中", Toast.LENGTH_SHORT).show()
+            return
+        }
+        rewrite(fullName + "\n", "已添加 $fullName")
+    }
+
+    val addLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val value = parseTextInputResult(result.data) ?: return@rememberLauncherForActivityResult
+        if (askAdd) {
+            askAdd = false
+            addEntry(value)
+        }
+    }
+
     val scheme = MaterialTheme.colorScheme
     Column(
         modifier = Modifier
@@ -327,35 +394,83 @@ private fun RepoTable(
             .clip(RoundedCornerShape(14.dp))
             .background(scheme.surfaceContainerLow),
     ) {
-        if (testHubRepo.isNotBlank()) {
-            SwipeDeleteRow(
-                label = "测试应用仓库",
-                value = testHubRepo,
-                icon = { Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                deleteContentDesc = "删除测试应用仓库",
-                onSwipePastThreshold = { onDelete("测试应用仓库", testHubRepo) },
+        when {
+            busy -> Row(
+                modifier = Modifier.fillMaxWidth().height(46.dp).padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                Text(
+                    "处理中…",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            error != null -> Text(
+                error!!,
+                style = MaterialTheme.typography.labelSmall,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 12.dp),
             )
-            TableDivider()
-        }
-        if (announceRepo.isNotBlank()) {
-            SwipeDeleteRow(
-                label = "公告仓库",
-                value = announceRepo,
-                icon = { Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                deleteContentDesc = "删除公告仓库",
-                onSwipePastThreshold = { onDelete("公告仓库", announceRepo) },
+            lines?.isEmpty() == true -> Text(
+                "索引里还没有测试应用",
+                style = MaterialTheme.typography.labelSmall,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 12.dp),
             )
-            TableDivider()
+            else -> lines?.forEachIndexed { i, line ->
+                if (i > 0) TableDivider()
+                SwipeDeleteRow(
+                    label = display(line),
+                    value = "",
+                    icon = { Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    deleteContentDesc = "删除测试应用",
+                    onSwipePastThreshold = { pendingDelete = line },
+                )
+            }
         }
-        TableActionRow(
-            label = "添加测试仓库",
-            icon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) },
-        ) { onAdd(true) }
-        TableDivider()
-        TableActionRow(
-            label = "添加公告仓库",
-            icon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) },
-        ) { onAdd(false) }
+        if (!busy && error == null) {
+            TableDivider()
+            TableActionRow(
+                label = "添加测试应用",
+                icon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) },
+            ) {
+                askAdd = true
+                launchTextInputSafely(addLauncher, "输入要添加的仓库 owner/repo 或链接")
+            }
+        }
+    }
+
+    // 删除二次确认
+    pendingDelete?.let { line ->
+        AlertDialog(
+            visible = true,
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("删除测试应用") },
+            text = { Text("确定从索引中移除「${display(line)}」吗？") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pendingDelete = null
+                        val target = line.trim()
+                        rewrite(
+                            lines.orEmpty()
+                                .filterNot { it.trim() == target }
+                                .joinToString("\n", postfix = "\n"),
+                            "已移除 ${display(line)}",
+                        )
+                    },
+                    label = { Text("删除") },
+                    colors = ButtonDefaults.buttonColors(),
+                )
+            },
+            dismissButton = {
+                Button(
+                    onClick = { pendingDelete = null },
+                    label = { Text("取消") },
+                )
+            },
+        )
     }
 }
 

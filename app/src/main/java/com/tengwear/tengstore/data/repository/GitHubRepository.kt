@@ -1,6 +1,7 @@
 package com.tengwear.tengstore.data.repository
 
 import com.tengwear.tengstore.data.remote.GitHubApiService
+import com.tengwear.tengstore.data.remote.dto.PutFileRequest
 import com.tengwear.tengstore.data.remote.dto.toDomain
 import com.tengwear.tengstore.domain.model.Asset
 import com.tengwear.tengstore.domain.model.Release
@@ -66,6 +67,41 @@ class GitHubRepository(private val api: GitHubApiService) {
             repo = repo,
             path = path,
         ).string()
+    }
+
+    /**
+     * 读取文件文本与 sha（供应用内改写索引文件用）。
+     * 文件不存在（404）时返回空文本与 null sha（首次创建）。
+     */
+    suspend fun fileWithSha(owner: String, repo: String, path: String): Pair<String, String?> {
+        return try {
+            val meta = api.fileInfo(owner, repo, path)
+            rawFile(owner, repo, path) to meta.sha
+        } catch (e: retrofit2.HttpException) {
+            if (e.code() == 404) "" to null else throw e
+        }
+    }
+
+    /** 更新仓库文本文件（Contents API PUT，Base64 编码内容）。 */
+    suspend fun updateTextFile(
+        owner: String,
+        repo: String,
+        path: String,
+        sha: String?,
+        newContent: String,
+        message: String,
+    ) {
+        api.putFile(
+            owner = owner,
+            repo = repo,
+            path = path,
+            body = PutFileRequest(
+                message = message,
+                content = java.util.Base64.getEncoder()
+                    .encodeToString(newContent.toByteArray(Charsets.UTF_8)),
+                sha = sha,
+            ),
+        )
     }
 
     // Kept for documentation: which artifacts we consider downloadable.

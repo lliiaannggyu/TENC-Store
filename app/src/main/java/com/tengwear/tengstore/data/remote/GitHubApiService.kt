@@ -1,13 +1,18 @@
 package com.tengwear.tengstore.data.remote
 
+import com.tengwear.tengstore.data.remote.dto.ContentInfoDto
+import com.tengwear.tengstore.data.remote.dto.PutFileRequest
+import com.tengwear.tengstore.data.remote.dto.PutFileResponse
 import com.tengwear.tengstore.data.remote.dto.ReleaseDto
 import com.tengwear.tengstore.data.remote.dto.RepoDto
 import com.tengwear.tengstore.data.remote.dto.RepoPermissionDto
 import com.tengwear.tengstore.data.remote.dto.SearchRepositoriesResponse
 import com.tengwear.tengstore.data.remote.dto.SearchUsersResponse
 import okhttp3.ResponseBody
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -71,4 +76,21 @@ interface GitHubApiService {
         @Path("repo") repo: String,
         @Path("path", encoded = true) path: String,
     ): ResponseBody
+
+    /** 读取文件元信息（取 sha，应用内更新索引文件用）。 */
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun fileInfo(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String,
+    ): ContentInfoDto
+
+    /** 更新仓库文件（Contents API PUT，content 为 Base64）。 */
+    @PUT("repos/{owner}/{repo}/contents/{path}")
+    suspend fun putFile(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path("path", encoded = true) path: String,
+        @Body body: PutFileRequest,
+    ): PutFileResponse
 }
