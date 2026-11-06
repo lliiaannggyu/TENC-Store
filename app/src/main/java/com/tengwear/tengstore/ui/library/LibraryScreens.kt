@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** 收藏夹：收藏的仓库列表，点击进详情（可下载 / 取消收藏）。 */
 @Composable
@@ -42,6 +43,7 @@ fun FavoritesScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("收藏") } }
 
             if (favorites.isEmpty()) {
@@ -81,6 +83,7 @@ fun HistoryScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("历史记录") } }
 
             if (history.isEmpty()) {

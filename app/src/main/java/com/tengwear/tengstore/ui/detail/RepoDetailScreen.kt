@@ -36,6 +36,7 @@ import coil.compose.AsyncImage
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 仓库详情页：README 文字说明 + 配图、最新版本信息、下载与收藏。
@@ -58,6 +59,7 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text(fullName.substringAfter("/")) } }
 
             item {

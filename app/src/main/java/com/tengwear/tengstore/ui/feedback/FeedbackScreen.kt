@@ -46,6 +46,7 @@ import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** 项目反馈页：选择建议 / Bug，填写内容，发到项目开发者邮箱（需已绑定邮箱）。 */
 @Composable
@@ -73,6 +74,7 @@ fun FeedbackScreen(
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("反馈 · ${fullName.substringAfter("/")}"); } }
 
             item {

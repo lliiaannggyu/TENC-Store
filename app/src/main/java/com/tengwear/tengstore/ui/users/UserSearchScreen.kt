@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 data class UserSearchUiState(
     val loading: Boolean = false,
@@ -81,6 +82,7 @@ fun UserSearchScreen(navController: NavHostController, query: String) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
+        edgeSpacers()
             item { ListHeader { Text("用户「$query」") } }
 
             if (state.loading) {

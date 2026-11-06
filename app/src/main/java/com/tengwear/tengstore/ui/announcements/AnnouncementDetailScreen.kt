@@ -24,6 +24,7 @@ import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import coil.compose.AsyncImage
 import com.tengwear.tengstore.data.AppContainer
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 公告详情页：轮播图点进来，展示公告大图与完整正文。
@@ -41,6 +42,7 @@ fun AnnouncementDetailScreen(navController: NavHostController, index: Int) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             if (announcement == null) {
                 item { ListHeader { Text("公告") } }
                 item { Text("公告不存在或已更新，请返回刷新。", modifier = Modifier.padding(8.dp)) }

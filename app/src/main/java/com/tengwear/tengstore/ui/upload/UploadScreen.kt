@@ -41,6 +41,7 @@ import com.tengwear.tengstore.ui.util.formatSize
 import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import java.io.File
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 应用上传页（新流程）：
@@ -75,6 +76,7 @@ fun UploadScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("应用上传") } }
 
             if (!uiState.tokenReady) {

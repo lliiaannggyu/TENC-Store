@@ -31,6 +31,7 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import java.net.URLEncoder
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 搜索输入页：只负责发起搜索。
@@ -70,6 +71,7 @@ fun SearchScreen(navController: NavHostController) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
+        edgeSpacers()
             item { ListHeader { Text("搜索应用") } }
 
             item {

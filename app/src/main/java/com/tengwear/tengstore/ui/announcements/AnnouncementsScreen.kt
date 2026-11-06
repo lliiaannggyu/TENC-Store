@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** 公告页：展示公告索引仓库 announcements.md 的内容，点按查看公告正文。 */
 @Composable
@@ -44,6 +45,7 @@ fun AnnouncementsScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("公告") } }
 
             if (uiState.loading) {

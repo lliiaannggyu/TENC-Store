@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Refresh
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** 是否已获得文件读取权限（R+ 需「所有文件访问」，低版本为 READ_EXTERNAL_STORAGE）。 */
 private fun hasStorageAccess(context: Context): Boolean = when {
@@ -119,6 +120,7 @@ fun FileManagerScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("选择 APK 文件") } }
 
             if (!granted) {

@@ -32,6 +32,7 @@ import com.tengwear.tengstore.ui.util.parseTextInputResult
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** 日志反馈页：查看日志、描述情况、勾选确认、复制/邮箱发送。 */
 @Composable
@@ -51,6 +52,7 @@ fun LogsScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("日志反馈") } }
 
             item {

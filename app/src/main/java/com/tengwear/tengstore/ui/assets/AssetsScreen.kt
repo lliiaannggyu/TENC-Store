@@ -26,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.domain.model.Asset
 import com.tengwear.tengstore.ui.util.formatSize
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 @Composable
 fun AssetsScreen(navController: NavHostController, releaseId: Long) {
@@ -44,6 +45,7 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
             ) {
+        edgeSpacers()
                 item { ListHeader { Text("APK 产物") } }
                 if (release == null) {
                     item {

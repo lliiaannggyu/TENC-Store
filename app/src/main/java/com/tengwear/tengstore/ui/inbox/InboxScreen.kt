@@ -35,6 +35,7 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** 信息板块：只显示通过日志口令校验的邮件（解密时间与接收时间误差 ≤5 分钟）。 */
 @Composable
@@ -53,6 +54,7 @@ fun InboxScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("信息") } }
 
             if (uiState.loading) {

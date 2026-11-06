@@ -31,6 +31,7 @@ import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.domain.model.Release
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /** GitHub 市场页：全部应用直接可见可下载，测试版带「内测」角标。 */
 @Composable
@@ -52,6 +53,7 @@ fun MarketScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("GitHub 市场") } }
 
             if (uiState.loading) {

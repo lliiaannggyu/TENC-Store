@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 data class UserReposUiState(
     val loading: Boolean = false,
@@ -79,6 +80,7 @@ fun UserReposScreen(navController: NavHostController, user: String) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
+        edgeSpacers()
             item { ListHeader { Text("$user 的仓库") } }
 
             if (state.loading) {

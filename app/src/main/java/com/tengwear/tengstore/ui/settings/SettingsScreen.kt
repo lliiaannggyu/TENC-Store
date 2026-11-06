@@ -74,6 +74,7 @@ import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
@@ -128,6 +129,7 @@ fun SettingsScreen(navController: NavHostController) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
+        edgeSpacers()
             item { ListHeader { Text("设置") } }
 
             // 版本号：用于核对安装的是否为最新包

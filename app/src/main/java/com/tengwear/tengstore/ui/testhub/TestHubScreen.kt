@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.formatSize
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 测试项目页（单开页面）：展示索引仓库 repos.txt 中的所有待测试项目。
@@ -86,6 +87,7 @@ fun TestHubScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("测试项目") } }
 
             item {
@@ -140,6 +142,7 @@ internal fun ProjectDetailScreen(
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text(project.fullName.substringAfter("/")) } }
 
             item {

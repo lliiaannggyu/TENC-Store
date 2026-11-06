@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.domain.model.Release
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 @Composable
 fun ReleasesScreen(navController: NavHostController, fullName: String) {
@@ -42,6 +43,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
+        edgeSpacers()
             item { ListHeader { Text("版本发布") } }
             item {
                 Text(fullName, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))

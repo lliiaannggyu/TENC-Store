@@ -41,6 +41,7 @@ import com.tengwear.tengstore.data.download.ApkDownloader
 import com.tengwear.tengstore.data.download.DownloadTracker
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 @Composable
 fun DownloadsScreen(navController: NavHostController) {
@@ -64,6 +65,7 @@ fun DownloadsScreen(navController: NavHostController) {
             state = listState,
             modifier = Modifier.fillMaxSize(),
         ) {
+        edgeSpacers()
             item { ListHeader { Text("我的下载") } }
 
             // 下载中：条形进度条

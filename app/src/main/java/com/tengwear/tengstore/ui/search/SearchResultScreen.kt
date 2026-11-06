@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.domain.model.Repo
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 搜索结果页（独立页面）：
@@ -75,6 +76,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
         }
 
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("搜索结果") } }
 
             uiState.error?.let { err ->

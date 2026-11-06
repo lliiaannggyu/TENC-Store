@@ -44,6 +44,7 @@ import com.tengwear.tengstore.BuildConfig
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 应用更新页：手动检查更新源仓库的最新 Release，
@@ -63,6 +64,7 @@ fun UpdateScreen(navController: NavHostController) {
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
             item { ListHeader { Text("应用更新") } }
 
             item {

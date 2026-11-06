@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
+import com.tengwear.tengstore.ui.util.edgeSpacers
 
 /**
  * 首页：三页左右滑动切换，堆叠列表风格（AppOpsPro 种子配色 + 条形胶囊卡）。
@@ -161,6 +162,7 @@ private fun TestPage(navController: NavHostController) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        edgeSpacers()
         // 顶部公告轮播（4:3，不参与堆叠变换）
         item {
             AnnouncementBanner(
@@ -233,6 +235,7 @@ private fun SearchPage(navController: NavHostController) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        edgeSpacers()
         item { StackedHeader("GitHub 搜索", spec) }
 
         item {
@@ -295,6 +298,7 @@ private fun MorePage(navController: NavHostController) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        edgeSpacers()
         item { StackedHeader("更多功能", spec) }
 
         item {
