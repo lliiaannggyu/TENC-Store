@@ -18,9 +18,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.RotaryScroll
@@ -99,12 +103,19 @@ fun UserSearchScreen(navController: NavHostController, query: String) {
             }
 
             items(state.users) { user ->
+                val favUsers by AppContainer.settings.favoriteUsers.collectAsState()
                 Button(
                     onClick = {
                         navController.navigate("user_repos/${java.net.URLEncoder.encode(user, "UTF-8")}")
                     },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(user, maxLines = 1) },
+                    icon = {
+                        Icon(
+                            if (user in favUsers) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (user in favUsers) "已收藏" else "未收藏",
+                        )
+                    },
                 )
             }
         }

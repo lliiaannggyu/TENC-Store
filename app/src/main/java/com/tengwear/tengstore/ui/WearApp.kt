@@ -87,6 +87,9 @@ fun WearApp() {
             composable("favorites") {
                 FavoritesScreen(navController)
             }
+            composable("favorite_users") {
+                com.tengwear.tengstore.ui.library.FavoriteUsersScreen(navController)
+            }
             composable("history") {
                 HistoryScreen(navController)
             }

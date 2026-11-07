@@ -19,9 +19,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.domain.model.Repo
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
@@ -67,6 +71,8 @@ class UserReposViewModel : ViewModel() {
 fun UserReposScreen(navController: NavHostController, user: String) {
     val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<UserReposViewModel>()
     val state by viewModel.uiState.collectAsState()
+    val favUsers by AppContainer.settings.favoriteUsers.collectAsState()
+    val isFavUser = user in favUsers
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
@@ -82,6 +88,22 @@ fun UserReposScreen(navController: NavHostController, user: String) {
         ) {
         edgeSpacers()
             item { ListHeader { Text("$user 的仓库") } }
+
+            // 收藏该用户：状态即时切换并落盘，收藏后可在「更多 → 收藏用户」直达
+            item {
+                Button(
+                    onClick = { AppContainer.settings.toggleFavoriteUser(user) },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text(if (isFavUser) "取消收藏该用户" else "收藏该用户", maxLines = 1) },
+                    icon = {
+                        Icon(
+                            if (isFavUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                        )
+                    },
+                    colors = androidx.wear.compose.material3.ButtonDefaults.filledTonalButtonColors(),
+                )
+            }
 
             if (state.loading) {
                 item { Text("加载中…", modifier = Modifier.padding(8.dp)) }

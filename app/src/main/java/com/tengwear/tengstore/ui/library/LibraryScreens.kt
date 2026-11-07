@@ -70,6 +70,50 @@ fun FavoritesScreen(navController: NavHostController) {
     }
 }
 
+/** 收藏用户：收藏的 GitHub 用户列表，点击直达其仓库列表（取消收藏在用户仓库页）。 */
+@Composable
+fun FavoriteUsersScreen(navController: NavHostController) {
+    val settings = AppContainer.settings
+    val favoriteUsers by settings.favoriteUsers.collectAsState()
+    val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
+
+    ScreenScaffold(
+            scrollState = listState,
+        timeText = { TimeText() },
+    ) {
+        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        edgeSpacers()
+            item { ListHeader { Text("收藏用户") } }
+
+            if (favoriteUsers.isEmpty()) {
+                item {
+                    Text(
+                        "还没有收藏用户：搜索用户后可在其仓库页收藏。",
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+            } else {
+                items(favoriteUsers.sorted().size) { i ->
+                    val user = favoriteUsers.sorted()[i]
+                    Button(
+                        onClick = {
+                            navController.navigate(
+                                "user_repos/${java.net.URLEncoder.encode(user, "UTF-8")}",
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        label = { Text(user, maxLines = 1) },
+                        secondaryLabel = { Text("查看仓库", maxLines = 1) },
+                        icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
+                        colors = ButtonDefaults.buttonColors(),
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** 浏览历史：最近查看过的仓库（最新在前，最多 20 条），可清空。 */
 @Composable
 fun HistoryScreen(navController: NavHostController) {

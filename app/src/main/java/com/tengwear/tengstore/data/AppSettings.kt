@@ -61,6 +61,10 @@ class AppSettings(private val context: Context) {
     private val _favorites = MutableStateFlow(prefs.getStringSet(KEY_FAVORITES, emptySet()).orEmpty())
     val favorites = _favorites.asStateFlow()
 
+    /** 收藏的 GitHub 用户（login 集合）。 */
+    private val _favoriteUsers = MutableStateFlow(prefs.getStringSet(KEY_FAVORITE_USERS, emptySet()).orEmpty())
+    val favoriteUsers = _favoriteUsers.asStateFlow()
+
     /** 随机抽取：历史上已抽过的仓库（owner/repo），避免重复抽中。 */
     private val _drawnRepos = MutableStateFlow(prefs.getStringSet(KEY_DRAWN_REPOS, emptySet()).orEmpty())
     val drawnRepos = _drawnRepos.asStateFlow()
@@ -125,6 +129,14 @@ class AppSettings(private val context: Context) {
         _favorites.value = next
     }
 
+    /** 收藏 / 取消收藏一个 GitHub 用户。 */
+    fun toggleFavoriteUser(user: String) {
+        val next = _favoriteUsers.value.toMutableSet()
+        if (!next.add(user)) next.remove(user)
+        prefs.edit().putStringSet(KEY_FAVORITE_USERS, next).apply()
+        _favoriteUsers.value = next
+    }
+
     /** 记录一次仓库浏览（去重、最新在前、上限 20 条）。 */
     fun addHistory(fullName: String) {
         if (fullName.isBlank()) return
@@ -172,6 +184,7 @@ class AppSettings(private val context: Context) {
         private const val KEY_MESSAGE_PASSWORD = "message_password"
         private const val KEY_LAST_PUSH_ID = "last_push_release_id"
         private const val KEY_FAVORITES = "favorite_repos"
+        private const val KEY_FAVORITE_USERS = "favorite_users"
         private const val KEY_DRAWN_REPOS = "drawn_repos"
         private const val KEY_HISTORY = "browse_history"
 

@@ -50,6 +50,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
@@ -63,7 +64,7 @@ import com.tengwear.tengstore.ui.util.edgeSpacers
  * 首页：三页左右滑动切换，堆叠列表风格（AppOpsPro 种子配色 + 条形胶囊卡）。
  * 页1「测试」：顶部公告轮播（4:3）+ 测试应用列表裸露展示；
  * 页2「搜索」：GitHub 仓库 / 用户搜索、随机抽取含 APK 项目、关键词设置；
- * 页3「更多」：收藏、历史记录、信息、我的下载、应用上传、服务端推送、设置。
+ * 页3「更多」：收藏、收藏用户、历史记录、信息、我的下载、应用上传、服务端推送、设置。
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -306,6 +307,13 @@ private fun MorePage(navController: NavHostController) {
                 onClick = { navController.navigate("favorites") },
                 leading = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 label = { Text("收藏", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
+            )
+        }
+        item {
+            StackedCapsule(spec,
+                onClick = { navController.navigate("favorite_users") },
+                leading = { Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                label = { Text("收藏用户", maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) },
             )
         }
         item {
