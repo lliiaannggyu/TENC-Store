@@ -27,6 +27,7 @@ import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.domain.model.Asset
 import com.tengwear.tengstore.ui.util.formatSize
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 @Composable
 fun AssetsScreen(navController: NavHostController, releaseId: Long) {
@@ -89,7 +90,7 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
 
 @Composable
 private fun AssetChip(asset: Asset, onDownload: () -> Unit) {
-    Button(
+    GrayButton(
         onClick = onDownload,
         label = { Text(asset.name, maxLines = 2) },
         secondaryLabel = { Text(formatSize(asset.size), maxLines = 1) },

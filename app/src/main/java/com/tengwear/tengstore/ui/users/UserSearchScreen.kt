@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 data class UserSearchUiState(
     val loading: Boolean = false,
@@ -104,7 +105,7 @@ fun UserSearchScreen(navController: NavHostController, query: String) {
 
             items(state.users) { user ->
                 val favUsers by AppContainer.settings.favoriteUsers.collectAsState()
-                Button(
+                GrayButton(
                     onClick = {
                         navController.navigate("user_repos/${java.net.URLEncoder.encode(user, "UTF-8")}")
                     },

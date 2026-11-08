@@ -32,6 +32,7 @@ import com.tengwear.tengstore.domain.model.Release
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** GitHub 市场页：全部应用直接可见可下载，测试版带「内测」角标。 */
 @Composable
@@ -57,7 +58,7 @@ fun MarketScreen(navController: NavHostController) {
             item { ListHeader { Text("GitHub 市场") } }
 
             if (uiState.loading) {
-                item { Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("加载中…") }) }
+                item { GrayButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("加载中…") }) }
             }
             uiState.error?.let { err ->
                 item { Text(err, modifier = Modifier.padding(8.dp)) }
@@ -72,7 +73,7 @@ fun MarketScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.load() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("刷新货架", maxLines = 1) },
@@ -87,7 +88,7 @@ fun MarketScreen(navController: NavHostController) {
 private fun MarketChip(app: MarketApp, onClick: () -> Unit) {
     val release = app.release
     val apks = release.assets.filter { it.isApk }
-    Button(
+    GrayButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
         enabled = apks.isNotEmpty(),

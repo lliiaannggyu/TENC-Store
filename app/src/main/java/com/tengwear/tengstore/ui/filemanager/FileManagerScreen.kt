@@ -47,6 +47,7 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** 是否已获得文件读取权限（R+ 需「所有文件访问」，低版本为 READ_EXTERNAL_STORAGE）。 */
 private fun hasStorageAccess(context: Context): Boolean = when {
@@ -125,12 +126,11 @@ fun FileManagerScreen(navController: NavHostController) {
 
             if (!granted) {
                 item {
-                    Button(
+                    GrayButton(
                         onClick = { requestAccess() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("授予文件访问权限", maxLines = 1) },
                         icon = { Icon(Icons.Default.FolderOpen, contentDescription = null) },
-                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
                 return@ScalingLazyColumn
@@ -144,7 +144,7 @@ fun FileManagerScreen(navController: NavHostController) {
             }
             if (dir != Environment.getExternalStorageDirectory()?.absolutePath) {
                 item {
-                    Button(
+                    GrayButton(
                         onClick = {
                             dir = File(dir).parent ?: dir
                             tick++
@@ -162,14 +162,14 @@ fun FileManagerScreen(navController: NavHostController) {
             items(entries.size) { i ->
                 val entry = entries[i]
                 if (entry.isDirectory) {
-                    Button(
+                    GrayButton(
                         onClick = { dir = entry.absolutePath; tick++ },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text(entry.name, maxLines = 1) },
                         icon = { Icon(Icons.Default.Folder, contentDescription = null) },
                     )
                 } else {
-                    Button(
+                    GrayButton(
                         onClick = {
                             navController.previousBackStackEntry
                                 ?.savedStateHandle?.set("picked_apk", entry.absolutePath)
@@ -179,13 +179,12 @@ fun FileManagerScreen(navController: NavHostController) {
                         label = { Text(entry.name, maxLines = 1) },
                         secondaryLabel = { Text(formatSize(entry.length()), maxLines = 1) },
                         icon = { Icon(Icons.Default.Android, contentDescription = null) },
-                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { tick++ },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("刷新", maxLines = 1) },

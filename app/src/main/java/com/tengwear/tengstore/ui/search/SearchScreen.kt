@@ -32,6 +32,7 @@ import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import java.net.URLEncoder
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 搜索输入页：只负责发起搜索。
@@ -75,17 +76,16 @@ fun SearchScreen(navController: NavHostController) {
             item { ListHeader { Text("搜索应用") } }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { launchTextInputSafely(inputLauncher, "搜索 GitHub 仓库") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("搜索仓库", maxLines = 1) },
                     icon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { launchTextInputSafely(userInputLauncher, "搜索 GitHub 用户") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("搜索用户", maxLines = 1) },
@@ -94,7 +94,7 @@ fun SearchScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { navController.navigate("settings") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("关键词设置", maxLines = 1) },

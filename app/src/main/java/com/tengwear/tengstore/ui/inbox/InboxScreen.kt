@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** 信息板块：只显示通过日志口令校验的邮件（解密时间与接收时间误差 ≤5 分钟）。 */
 @Composable
@@ -58,7 +59,7 @@ fun InboxScreen(navController: NavHostController) {
             item { ListHeader { Text("信息") } }
 
             if (uiState.loading) {
-                item { Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("正在拉取信息…") }) }
+                item { GrayButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("正在拉取信息…") }) }
             }
             uiState.error?.let { err ->
                 item { Text(err, modifier = Modifier.padding(8.dp)) }
@@ -74,7 +75,7 @@ fun InboxScreen(navController: NavHostController) {
 
             items(uiState.items.size) { i ->
                 val item = uiState.items[i]
-                Button(
+                GrayButton(
                     onClick = { detail = item },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = {
@@ -91,12 +92,11 @@ fun InboxScreen(navController: NavHostController) {
                         Text(item.body.lineSequence().firstOrNull { it.isNotBlank() } ?: "（日志）", maxLines = 1)
                     },
                     icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.refresh() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !uiState.loading,

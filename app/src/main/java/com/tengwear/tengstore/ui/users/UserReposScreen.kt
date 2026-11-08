@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 data class UserReposUiState(
     val loading: Boolean = false,
@@ -91,7 +92,7 @@ fun UserReposScreen(navController: NavHostController, user: String) {
 
             // 收藏该用户：状态即时切换并落盘，收藏后可在「更多 → 收藏用户」直达
             item {
-                Button(
+                GrayButton(
                     onClick = { AppContainer.settings.toggleFavoriteUser(user) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(if (isFavUser) "取消收藏该用户" else "收藏该用户", maxLines = 1) },
@@ -116,7 +117,7 @@ fun UserReposScreen(navController: NavHostController, user: String) {
             }
 
             items(state.repos) { repo ->
-                Button(
+                GrayButton(
                     onClick = {
                         navController.navigate("detail/${repo.fullName.replace("/", "~~")}")
                     },

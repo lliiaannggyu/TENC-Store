@@ -42,6 +42,7 @@ import com.tengwear.tengstore.data.download.DownloadTracker
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 @Composable
 fun DownloadsScreen(navController: NavHostController) {
@@ -138,7 +139,7 @@ private fun LinearBar(progress: Float) {
 
 @Composable
 private fun DownloadedChip(file: File, onInstall: () -> Unit, onDelete: () -> Unit) {
-    Button(
+    GrayButton(
         onClick = onInstall,
         label = { Text(file.name, maxLines = 2) },
         secondaryLabel = { Text("点按安装 · ${formatSize(file.length())}", maxLines = 1) },

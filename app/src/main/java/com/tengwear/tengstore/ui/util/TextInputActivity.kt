@@ -50,6 +50,7 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 内置文本输入页（重新设计）：
@@ -232,7 +233,7 @@ private fun RoundActionButton(
 ) {
     val finalBg = if (enabled) background else background.copy(alpha = 0.35f)
     val finalTint = if (enabled) tint else tint.copy(alpha = 0.4f)
-    Button(
+    GrayButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.size(52.dp),

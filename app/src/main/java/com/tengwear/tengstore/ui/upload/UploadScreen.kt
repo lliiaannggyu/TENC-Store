@@ -42,6 +42,7 @@ import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import java.io.File
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 应用上传页（新流程）：
@@ -88,12 +89,11 @@ fun UploadScreen(navController: NavHostController) {
                     )
                 }
                 item {
-                    Button(
+                    GrayButton(
                         onClick = { navController.navigate("settings") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("去设置授予令牌", maxLines = 1) },
                         icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
                 return@ScalingLazyColumn
@@ -103,7 +103,7 @@ fun UploadScreen(navController: NavHostController) {
             when {
                 uiState.reposLoading -> {
                     item {
-                        Button(
+                        GrayButton(
                             onClick = {},
                             enabled = false,
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
@@ -114,7 +114,7 @@ fun UploadScreen(navController: NavHostController) {
                 uiState.reposError != null -> {
                     item { Text(uiState.reposError ?: "", modifier = Modifier.padding(8.dp)) }
                     item {
-                        Button(
+                        GrayButton(
                             onClick = { viewModel.loadRepos() },
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                             label = { Text("重试", maxLines = 1) },
@@ -126,7 +126,7 @@ fun UploadScreen(navController: NavHostController) {
                     items(uiState.repos.size) { i ->
                         val repo = uiState.repos[i]
                         val selected = uiState.selectedRepo == repo
-                        Button(
+                        GrayButton(
                             onClick = { viewModel.selectRepo(repo) },
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                             label = { Text(repo, maxLines = 1) },
@@ -144,7 +144,7 @@ fun UploadScreen(navController: NavHostController) {
 
             item { ListHeader { Text("选择 APK") } }
             item {
-                Button(
+                GrayButton(
                     onClick = { navController.navigate("filemanager") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("文件管理器", maxLines = 1) },
@@ -161,7 +161,7 @@ fun UploadScreen(navController: NavHostController) {
 
             item { ListHeader { Text("发布说明") } }
             item {
-                Button(
+                GrayButton(
                     onClick = { launchTextInputSafely(noteLauncher, "输入更新说明") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("填写更新说明", maxLines = 1) },
@@ -180,7 +180,7 @@ fun UploadScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.publish() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !uiState.busy,
@@ -192,11 +192,10 @@ fun UploadScreen(navController: NavHostController) {
                             Icon(Icons.Default.CloudUpload, contentDescription = null)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.sendReportByEmail(context) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("邮箱托管发布记录", maxLines = 1) },

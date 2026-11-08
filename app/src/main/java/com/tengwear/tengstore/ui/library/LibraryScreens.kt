@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.History
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** 收藏夹：收藏的仓库列表，点击进详情（可下载 / 取消收藏）。 */
 @Composable
@@ -56,13 +57,12 @@ fun FavoritesScreen(navController: NavHostController) {
             } else {
                 items(favorites.sorted().size) { i ->
                     val fullName = favorites.sorted()[i]
-                    Button(
+                    GrayButton(
                         onClick = { navController.navigate("detail/${fullName.replace("/", "~~")}") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text(fullName.substringAfter("/"), maxLines = 1) },
                         secondaryLabel = { Text(fullName, maxLines = 1) },
                         icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }
@@ -96,7 +96,7 @@ fun FavoriteUsersScreen(navController: NavHostController) {
             } else {
                 items(favoriteUsers.sorted().size) { i ->
                     val user = favoriteUsers.sorted()[i]
-                    Button(
+                    GrayButton(
                         onClick = {
                             navController.navigate(
                                 "user_repos/${java.net.URLEncoder.encode(user, "UTF-8")}",
@@ -106,7 +106,6 @@ fun FavoriteUsersScreen(navController: NavHostController) {
                         label = { Text(user, maxLines = 1) },
                         secondaryLabel = { Text("查看仓库", maxLines = 1) },
                         icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }
@@ -140,7 +139,7 @@ fun HistoryScreen(navController: NavHostController) {
             } else {
                 items(history.size) { i ->
                     val fullName = history[i]
-                    Button(
+                    GrayButton(
                         onClick = { navController.navigate("detail/${fullName.replace("/", "~~")}") },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text(fullName.substringAfter("/"), maxLines = 1) },
@@ -149,12 +148,11 @@ fun HistoryScreen(navController: NavHostController) {
                     )
                 }
                 item {
-                    Button(
+                    GrayButton(
                         onClick = { settings.clearHistory() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("清空历史", maxLines = 1) },
                         icon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                        colors = ButtonDefaults.filledTonalButtonColors(),
                     )
                 }
             }

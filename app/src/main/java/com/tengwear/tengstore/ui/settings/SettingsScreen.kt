@@ -76,6 +76,7 @@ import com.tengwear.tengstore.ui.util.parseTextInputResult
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
@@ -140,7 +141,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             // 应用内更新（GitHub Release，非强制）
             item {
-                Button(
+                GrayButton(
                     onClick = { navController.navigate("update") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("检查更新", maxLines = 1) },
@@ -149,7 +150,7 @@ fun SettingsScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { ask(FIELD_TOKEN, "输入 GitHub 令牌") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("GitHub 令牌", maxLines = 1) },
@@ -158,7 +159,7 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = { settings.setToken(null) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !token.isNullOrBlank(),
@@ -169,7 +170,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             item { ListHeader { Text("搜索关键词") } }
             item {
-                Button(
+                GrayButton(
                     onClick = { ask(FIELD_KEYWORDS, "输入关键词，用逗号分隔") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("关键词", maxLines = 1) },
@@ -187,7 +188,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             item { ListHeader { Text("仓库设置") } }
             item {
-                Button(
+                GrayButton(
                     onClick = { ask(FIELD_TEST_HUB, "输入测试索引仓库 owner/repo") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("测试应用仓库", maxLines = 1) },
@@ -196,7 +197,7 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = { ask(FIELD_ANNOUNCE, "输入公告仓库 owner/repo") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("公告仓库", maxLines = 1) },
@@ -213,7 +214,7 @@ fun SettingsScreen(navController: NavHostController) {
 
             item { ListHeader { Text("开发者") } }
             item {
-                Button(
+                GrayButton(
                     onClick = { ask(FIELD_DEV_EMAIL, "输入你的开发者邮箱") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("开发者邮箱", maxLines = 1) },
@@ -236,7 +237,7 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = { ask(FIELD_SMTP_CODE, "输入 SMTP 授权码") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("SMTP 授权码", maxLines = 1) },
@@ -246,9 +247,9 @@ fun SettingsScreen(navController: NavHostController) {
             }
             if (developerEmail.isNotBlank() && smtpAuthCode.isNotBlank()) {
                 item {
-                    Button(
+                    GrayButton(
                         onClick = {
-                            if (verifying) return@Button
+                            if (verifying) return@GrayButton
                             verifying = true
                             scope.launch {
                                 val err = MailClient.send(
@@ -277,7 +278,6 @@ fun SettingsScreen(navController: NavHostController) {
                                 Icon(Icons.Default.Email, contentDescription = null)
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(),
                     )
                 }
             }
@@ -495,7 +495,7 @@ private fun TestContentManager() {
             title = { Text("删除测试应用") },
             text = { Text("确定从索引中移除「${display(line)}」吗？") },
             confirmButton = {
-                Button(
+                GrayButton(
                     onClick = {
                         pendingDelete = null
                         val target = line.trim()
@@ -505,11 +505,10 @@ private fun TestContentManager() {
                         )
                     },
                     label = { Text("删除") },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             },
             dismissButton = {
-                Button(
+                GrayButton(
                     onClick = { pendingDelete = null },
                     label = { Text("取消") },
                 )

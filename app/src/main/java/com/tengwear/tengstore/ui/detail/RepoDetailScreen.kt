@@ -37,6 +37,7 @@ import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 仓库详情页：README 文字说明 + 配图、最新版本信息、下载与收藏。
@@ -92,17 +93,16 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { navController.navigate("releases/${fullName.replace("/", "~~")}") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = release != null,
                     label = { Text("下载", maxLines = 1) },
                     icon = { Icon(Icons.Default.Download, contentDescription = null) },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = { settings.toggleFavorite(fullName) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(if (isFavorite) "取消收藏" else "收藏", maxLines = 1) },
@@ -163,7 +163,7 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { navController.popBackStack() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("返回", maxLines = 1) },

@@ -42,6 +42,7 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.formatSize
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 测试项目页（单开页面）：展示索引仓库 repos.txt 中的所有待测试项目。
@@ -98,7 +99,7 @@ fun TestHubScreen(navController: NavHostController) {
             }
             if (uiState.loading) {
                 item {
-                    Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("读取索引中…") })
+                    GrayButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("读取索引中…") })
                 }
             }
             uiState.error?.let { err ->
@@ -112,7 +113,7 @@ fun TestHubScreen(navController: NavHostController) {
 
             if (uiState.projects.isNotEmpty()) {
                 item {
-                    Button(
+                    GrayButton(
                         onClick = { viewModel.load() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("刷新", maxLines = 1) },
@@ -168,17 +169,16 @@ internal fun ProjectDetailScreen(
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = onDownload,
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = apks.isNotEmpty(),
                     label = { Text("下载", maxLines = 1) },
                     icon = { Icon(Icons.Default.Download, contentDescription = null) },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = onFeedback,
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("反馈", maxLines = 1) },
@@ -222,7 +222,7 @@ internal fun ProjectDetailScreen(
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = onBack,
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("返回列表", maxLines = 1) },
@@ -246,7 +246,7 @@ internal fun ProjectDetailScreen(
 internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
     when {
         project.loading -> {
-            Button(
+            GrayButton(
                 onClick = {},
                 enabled = false,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
@@ -256,19 +256,18 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
             )
         }
         project.error != null -> {
-            Button(
+            GrayButton(
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
                 secondaryLabel = { Text(project.error ?: "", maxLines = 1) },
                 icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
-                colors = ButtonDefaults.filledTonalButtonColors(),
             )
         }
         else -> {
             val release = project.latest
             val apks = release?.apkAssets ?: emptyList()
-            Button(
+            GrayButton(
                 onClick = onClick,
                 enabled = release != null,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
@@ -285,7 +284,6 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
                     )
                 },
                 icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
-                colors = ButtonDefaults.buttonColors(),
             )
         }
     }

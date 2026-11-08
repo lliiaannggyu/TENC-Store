@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** 公告页：展示公告索引仓库 announcements.md 的内容，点按查看公告正文。 */
 @Composable
@@ -49,7 +50,7 @@ fun AnnouncementsScreen(navController: NavHostController) {
             item { ListHeader { Text("公告") } }
 
             if (uiState.loading) {
-                item { Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("加载中…") }) }
+                item { GrayButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT), label = { Text("加载中…") }) }
             }
             uiState.error?.let { err ->
                 item { Text(err, modifier = Modifier.padding(8.dp)) }
@@ -60,7 +61,7 @@ fun AnnouncementsScreen(navController: NavHostController) {
 
             items(uiState.items.size) { i ->
                 val announcement = uiState.items[i]
-                Button(
+                GrayButton(
                     onClick = { navController.navigate("announcement/$i") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(announcement.title, maxLines = 1) },
@@ -71,12 +72,11 @@ fun AnnouncementsScreen(navController: NavHostController) {
                         )
                     },
                     icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.load() },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("刷新公告", maxLines = 1) },

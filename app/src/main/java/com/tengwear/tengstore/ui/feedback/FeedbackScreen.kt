@@ -47,6 +47,7 @@ import com.tengwear.tengstore.ui.util.parseTextInputResult
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** 项目反馈页：选择建议 / Bug，填写内容，发到项目开发者邮箱（需已绑定邮箱）。 */
 @Composable
@@ -90,7 +91,7 @@ fun FeedbackScreen(
 
             item { ListHeader { Text("反馈类型") } }
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.setType(FeedbackType.SUGGESTION) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("建议", maxLines = 1) },
@@ -104,7 +105,7 @@ fun FeedbackScreen(
                 )
             }
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.setType(FeedbackType.BUG) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("Bug", maxLines = 1) },
@@ -120,7 +121,7 @@ fun FeedbackScreen(
 
             item { ListHeader { Text("反馈内容") } }
             item {
-                Button(
+                GrayButton(
                     onClick = {
                         launchTextInputSafely(contentLauncher, "输入反馈内容")
                     },
@@ -133,13 +134,12 @@ fun FeedbackScreen(
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.send(context) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     enabled = !uiState.busy && devEmail.isNotBlank(),
                     label = { Text("发送反馈", maxLines = 1) },
                     icon = { Icon(Icons.Default.Send, contentDescription = null) },
-                    colors = ButtonDefaults.buttonColors(),
                 )
             }
         }
@@ -180,7 +180,7 @@ fun FeedbackScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(12.dp))
-                    Button(
+                    GrayButton(
                         onClick = { viewModel.dismissDialog() },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("确定", maxLines = 1) },

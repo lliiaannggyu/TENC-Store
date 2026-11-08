@@ -45,6 +45,7 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 应用更新页：手动检查更新源仓库的最新 Release，
@@ -77,12 +78,11 @@ fun UpdateScreen(navController: NavHostController) {
             when (ui.phase) {
                 UpdateViewModel.Phase.IDLE -> {
                     item {
-                        Button(
+                        GrayButton(
                             onClick = { vm.check() },
                             modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                             label = { Text("检查更新", maxLines = 1) },
                             icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
-                            colors = ButtonDefaults.buttonColors(),
                         )
                     }
                 }
@@ -160,25 +160,23 @@ fun UpdateScreen(navController: NavHostController) {
                         // 下载完成：安装
                         file != null -> {
                             item {
-                                Button(
+                                GrayButton(
                                     onClick = { installApk(context, file) },
                                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                                     label = { Text("安装新版本", maxLines = 1) },
                                     secondaryLabel = { Text(formatSize(file.length()), maxLines = 1) },
                                     icon = { Icon(Icons.Default.Android, contentDescription = null) },
-                                    colors = ButtonDefaults.buttonColors(),
                                 )
                             }
                         }
                         // 待下载
                         else -> {
                             item {
-                                Button(
+                                GrayButton(
                                     onClick = { vm.download() },
                                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                                     label = { Text("下载更新", maxLines = 1) },
                                     icon = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
-                                    colors = ButtonDefaults.buttonColors(),
                                 )
                             }
                         }
@@ -191,7 +189,7 @@ fun UpdateScreen(navController: NavHostController) {
 
 @Composable
 private fun RetryChip(vm: UpdateViewModel) {
-    Button(
+    GrayButton(
         onClick = { vm.check() },
         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
         label = { Text("重新检查", maxLines = 1) },

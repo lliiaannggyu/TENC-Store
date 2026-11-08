@@ -32,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.domain.model.Repo
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /**
  * 搜索结果页（独立页面）：
@@ -110,7 +111,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.search(query) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("重新搜索", maxLines = 1) },
@@ -123,7 +124,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
 
 @Composable
 private fun RepoChip(repo: Repo, onClick: () -> Unit) {
-    Button(
+    GrayButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
         label = { Text(repo.name, maxLines = 1) },

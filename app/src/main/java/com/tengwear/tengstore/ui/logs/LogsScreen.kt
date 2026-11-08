@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 /** 日志反馈页：查看日志、描述情况、勾选确认、复制/邮箱发送。 */
 @Composable
@@ -56,7 +57,7 @@ fun LogsScreen(navController: NavHostController) {
             item { ListHeader { Text("日志反馈") } }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { launchTextInputSafely(descLauncher, "描述遇到的情况") },
                     label = { Text("描述情况") },
                     secondaryLabel = {
@@ -77,7 +78,7 @@ fun LogsScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.copyToClipboard(context) },
                     label = { Text("复制到剪贴板") },
                     icon = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
@@ -85,7 +86,7 @@ fun LogsScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.sendByEmail(context) },
                     label = { Text("邮箱发送日志") },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
@@ -111,7 +112,7 @@ fun LogsScreen(navController: NavHostController) {
             }
 
             item {
-                Button(
+                GrayButton(
                     onClick = { viewModel.clearLogs() },
                     label = { Text("清空日志") },
                 )

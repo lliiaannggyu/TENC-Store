@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Android
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.domain.model.Release
 import com.tengwear.tengstore.ui.util.edgeSpacers
+import com.tengwear.tengstore.ui.util.GrayButton
 
 @Composable
 fun ReleasesScreen(navController: NavHostController, fullName: String) {
@@ -50,7 +51,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
             }
 
             if (uiState.loading) {
-                item { Button(onClick = {}, enabled = false, label = { Text("加载中…") }) }
+                item { GrayButton(onClick = {}, enabled = false, label = { Text("加载中…") }) }
             }
 
             uiState.error?.let { err ->
@@ -77,7 +78,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
 @Composable
 private fun ReleaseChip(release: Release, onClick: () -> Unit) {
     val apkCount = release.assets.count { it.isApk }
-    Button(
+    GrayButton(
         onClick = onClick,
         enabled = apkCount > 0,
         label = { Text(release.tagName, maxLines = 1) },
