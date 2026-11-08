@@ -38,6 +38,8 @@ data class InboxItem(
     val sender: String? = null,
     /** 投稿：GitHub 链接（owner/repo 或完整链接）。 */
     val link: String? = null,
+    /** 投稿：一句话描述功能（审核时必须可见）。 */
+    val desc: String? = null,
     /** 投稿结果：通过 / 打回。 */
     val reviewResult: String? = null,
     /** 投稿结果：打回理由。 */
@@ -300,6 +302,7 @@ class InboxViewModel : ViewModel() {
                 type = fields["类型"],
                 sender = fields["反馈人"] ?: fields["投稿人"],
                 link = fields["链接"],
+                desc = fields["描述"],
                 reviewResult = fields["结果"],
                 reviewReason = fields["理由"],
             )

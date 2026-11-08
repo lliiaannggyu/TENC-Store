@@ -47,6 +47,7 @@ import com.tengwear.tengstore.ui.testhub.TestProject
 import com.tengwear.tengstore.ui.testhub.TestHubViewModel
 import com.tengwear.tengstore.ui.util.GrayButton
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.NewTagBadge
 import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
@@ -292,7 +293,14 @@ private fun TestPage(navController: NavHostController) {
                 onClick = { selected = project },
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
-                label = { Text(if (project.hasUpdate) "🆕 $name" else name, maxLines = 1) },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(name, maxLines = 1)
+                        if (project.hasUpdate) {
+                            NewTagBadge(modifier = Modifier.padding(start = 4.dp))
+                        }
+                    }
+                },
                 secondaryLabel = {
                     if (project.loading) {
                         Text("加载中…", maxLines = 1)

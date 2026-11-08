@@ -113,9 +113,17 @@ fun InboxScreen(navController: NavHostController) {
                         )
                     },
                     secondaryLabel = {
+                        // 投稿列表直接显示一句话描述，审核一眼可见
                         Text(
-                            item.body.lineSequence().firstOrNull { it.isNotBlank() }
-                                ?: item.reviewReason.orEmpty().ifBlank { "（正文为空）" },
+                            when (item.kind) {
+                                InboxKind.SUBMISSION ->
+                                    item.desc?.takeIf { it.isNotBlank() }
+                                        ?: item.body.lineSequence().firstOrNull { it.isNotBlank() }
+                                        ?: "（未填写描述）"
+                                else ->
+                                    item.body.lineSequence().firstOrNull { it.isNotBlank() }
+                                        ?: item.reviewReason.orEmpty().ifBlank { "（正文为空）" }
+                            },
                             maxLines = 1,
                         )
                     },
@@ -159,14 +167,26 @@ fun InboxScreen(navController: NavHostController) {
                             appendLine("接收 ${timeFmt.format(Date(item.receivedAt))}")
                             item.project?.let { appendLine("项目 $it") }
                             item.type?.let { appendLine("类型 $it") }
-                            item.sender?.let { appendLine("投稿人 $it") }
                             item.link?.let { appendLine("链接 $it") }
+                            // 审核投稿时必须能看见一句话描述
+                            if (item.kind == InboxKind.SUBMISSION) {
+                                appendLine(
+                                    "一句话描述 " + (
+                                        item.desc?.takeIf { it.isNotBlank() }
+                                            ?: item.body.takeIf { it.isNotBlank() }
+                                            ?: "（未填写）"
+                                        ),
+                                )
+                            }
+                            item.sender?.let { appendLine("投稿人 $it") }
                             item.reviewResult?.let { appendLine("结果 $it") }
                             item.reviewReason?.let { appendLine("理由 $it") }
                         },
                     )
                     Text(
-                        item.body.ifBlank { "（正文为空）" },
+                        // 投稿的描述已在上方单独展示，正文区不重复
+                        (if (item.kind == InboxKind.SUBMISSION) "" else item.body)
+                            .ifBlank { "（正文为空）" },
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                     if (item.kind == InboxKind.SUBMISSION) {

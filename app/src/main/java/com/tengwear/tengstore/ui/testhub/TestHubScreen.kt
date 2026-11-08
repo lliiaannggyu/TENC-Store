@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -19,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,6 +41,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
+import com.tengwear.tengstore.ui.util.NewTagBadge
 import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.formatSize
 import com.tengwear.tengstore.ui.util.edgeSpacers
@@ -279,7 +282,14 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
                 onClick = onClick,
                 enabled = release != null,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                label = { Text(if (project.hasUpdate) "🆕 $name" else name, maxLines = 1) },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(name, maxLines = 1)
+                        if (project.hasUpdate) {
+                            NewTagBadge(modifier = Modifier.padding(start = 4.dp))
+                        }
+                    }
+                },
                 secondaryLabel = {
                     Text(
                         buildString {
