@@ -335,16 +335,22 @@ private fun TestContentManager() {
 
     androidx.compose.runtime.LaunchedEffect(hubRepo) { load() }
 
-    fun rewrite(newText: String, successMsg: String) {
+    /**
+     * 改写索引文件：在应用内先取最新内容与 sha，再对行做 [transform] 后整体写回。
+     * 注意 transform 基于当前文件的原始行操作，保证增删都是增量修改、不会覆盖其他条目。
+     */
+    fun rewrite(transform: (List<String>) -> List<String>, successMsg: String) {
         val parts = settings.parseRepo(hubRepo) ?: return
         scope.launch {
             busy = true
             val r = runCatching {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val (_, sha) = AppContainer.gitHubRepository
+                    val (text, sha) = AppContainer.gitHubRepository
                         .fileWithSha(parts.first, parts.second, "repos.txt")
+                    val newLines = transform(text.lines().filter { it.isNotBlank() })
                     AppContainer.gitHubRepository.updateTextFile(
-                        parts.first, parts.second, "repos.txt", sha, newText,
+                        parts.first, parts.second, "repos.txt", sha,
+                        newLines.joinToString("\n", postfix = "\n"),
                         "chore: TENC Store 应用内管理测试应用列表",
                     )
                 }
@@ -364,7 +370,7 @@ private fun TestContentManager() {
         }
     }
 
-    /** 确认添加：解析链接 + 校验邮箱，生成「链接 [dev:加密邮箱]」一行写入索引。 */
+    /** 确认添加：解析链接 + 校验邮箱，生成「链接 [dev:加密邮箱]」一行追加到索引末尾。 */
     fun confirmAdd() {
         val fullName = formLink.trim()
             .removePrefix("https://github.com/").removePrefix("http://github.com/")
@@ -386,7 +392,7 @@ private fun TestContentManager() {
             append("https://github.com/").append(fullName)
             if (email.isNotEmpty()) append(" ").append(DevMailCipher.encode(email))
         }
-        rewrite(line + "\n", "已添加 $fullName")
+        rewrite({ ls -> ls + line }, "已添加 $fullName")
         formLink = ""
         formEmail = ""
         formVisible = false
@@ -494,9 +500,7 @@ private fun TestContentManager() {
                         pendingDelete = null
                         val target = line.trim()
                         rewrite(
-                            lines.orEmpty()
-                                .filterNot { it.trim() == target }
-                                .joinToString("\n", postfix = "\n"),
+                            { ls -> ls.filterNot { it.trim() == target } },
                             "已移除 ${display(line)}",
                         )
                     },
