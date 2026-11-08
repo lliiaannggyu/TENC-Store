@@ -35,12 +35,17 @@ object LogToken {
 
     /**
      * 校验邮件正文：提取口令 → 解密出发送时间 → 与 [receivedMillis] 比对。
+     * @param windowMinutes 误差上限（分钟）。默认 5 分钟；信息板块用更大窗口保证历史邮件可见。
      * @return 校验通过返回解密出的发送时间戳；无口令/解密失败/超时返回 null。
      */
-    fun validate(body: String, receivedMillis: Long): Long? {
+    fun validate(
+        body: String,
+        receivedMillis: Long,
+        windowMinutes: Long = WINDOW_MINUTES,
+    ): Long? {
         val token = extract(body) ?: return null
         val sentAt = TimeToken.decrypt(token, Secrets.LOG_CODEBOOK) ?: return null
-        return if (kotlin.math.abs(receivedMillis - sentAt) <= WINDOW_MINUTES * 60 * 1000L) {
+        return if (kotlin.math.abs(receivedMillis - sentAt) <= windowMinutes * 60 * 1000L) {
             sentAt
         } else {
             null

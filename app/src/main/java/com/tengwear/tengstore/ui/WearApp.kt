@@ -109,6 +109,9 @@ fun WearApp() {
             composable("upload") {
                 UploadScreen(navController)
             }
+            composable("submit") {
+                com.tengwear.tengstore.ui.submit.SubmitScreen(navController)
+            }
             composable("filemanager") {
                 FileManagerScreen(navController)
             }

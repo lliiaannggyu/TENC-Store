@@ -25,7 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
@@ -36,6 +39,9 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.data.AppContainer
+import com.tengwear.tengstore.data.MailClient
+import com.tengwear.tengstore.ui.inbox.InboxItem
+import com.tengwear.tengstore.ui.inbox.InboxViewModel
 import com.tengwear.tengstore.ui.testhub.ProjectDetailScreen
 import com.tengwear.tengstore.ui.testhub.TestProject
 import com.tengwear.tengstore.ui.testhub.TestHubViewModel
@@ -52,6 +58,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
@@ -68,6 +75,50 @@ import com.tengwear.tengstore.ui.util.edgeSpacers
 @Composable
 fun HomeScreen(navController: NavHostController) {
     val pagerState = rememberPagerState { 3 }
+
+    // 开屏检查：新消息提示 + 投稿审核结果全屏提醒
+    var msgHintCount by remember { mutableStateOf(0) }
+    var reviewItem by remember { mutableStateOf<InboxItem?>(null) }
+    var fetchedMails by remember { mutableStateOf<List<MailClient.InboxMail>?>(null) }
+
+    LaunchedEffect(Unit) {
+        val settings = AppContainer.settings
+        val email = settings.developerEmail.value
+        val code = settings.smtpAuthCode.value
+        if (email.isBlank() || code.isBlank()) return@LaunchedEffect
+        val (mails, _) = MailClient.fetchVerifiedInbox(
+            email = email,
+            authCode = code,
+            subjectKeyword = InboxViewModel.LOG_SUBJECT,
+            sinceHours = 72,
+            windowMinutes = 7 * 24 * 60,
+        )
+        fetchedMails = mails
+        if (mails.isEmpty()) return@LaunchedEffect
+        val newReview = mails
+            .filter { it.subject.contains("投稿结果") && it.receivedAt > settings.lastReviewSeenAt }
+            .maxByOrNull { it.receivedAt }
+        if (newReview != null) {
+            reviewItem = InboxViewModel.parseFields(newReview)
+        } else {
+            msgHintCount = mails.count {
+                !it.subject.contains("投稿结果") && it.receivedAt > settings.lastInboxSeenAt
+            }
+        }
+    }
+
+    fun dismissReview() {
+        val settings = AppContainer.settings
+        fetchedMails
+            ?.filter { it.subject.contains("投稿结果") }
+            ?.maxOfOrNull { it.receivedAt }
+            ?.let { settings.lastReviewSeenAt = it }
+        reviewItem = null
+        // 审核提醒关闭后，再提示普通新信息
+        msgHintCount = fetchedMails?.count {
+            !it.subject.contains("投稿结果") && it.receivedAt > settings.lastInboxSeenAt
+        } ?: 0
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -106,6 +157,71 @@ fun HomeScreen(navController: NavHostController) {
         }
         // 全局时间（各页共用）
         TimeText(modifier = Modifier.align(Alignment.TopCenter))
+
+        // 投稿审核结果：全屏提醒
+        reviewItem?.let { item ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF15161A)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "🔔 审核结果",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        item.link ?: item.project ?: "未知仓库",
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 10.dp),
+                    )
+                    Text(
+                        "结果：${item.reviewResult ?: "打回"}",
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                    Text(
+                        "理由：${item.reviewReason?.ifBlank { "无" } ?: "无"}",
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                    GrayButton(
+                        onClick = { dismissReview() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 14.dp)
+                            .height(LIST_CHIP_HEIGHT),
+                        label = { Text("知道了", maxLines = 1) },
+                    )
+                }
+            }
+        }
+    }
+
+    // 新消息提示（审核提醒优先；全屏提醒关闭后才弹）
+    msgHintCount.takeIf { it > 0 && reviewItem == null }?.let { count ->
+        androidx.wear.compose.material3.AlertDialog(
+            visible = true,
+            onDismissRequest = { msgHintCount = 0 },
+            confirmButton = {
+                GrayButton(
+                    onClick = { msgHintCount = 0 },
+                    label = { Text("知道了") },
+                )
+            },
+            title = { Text("新消息", maxLines = 1) },
+            text = { Text("有 $count 条新信息，请到「更多 → 信息」查看") },
+        )
     }
 }
 
@@ -119,6 +235,13 @@ private fun TestPage(navController: NavHostController) {
     RotaryScroll(listState)
 
     LaunchedEffect(Unit) { viewModel.load() }
+
+    // 打开详情即视为看过当前版本，「有更新」表情随之消失
+    LaunchedEffect(selected?.fullName) {
+        selected?.let { sel ->
+            sel.latest?.let { rel -> viewModel.markSeen(sel.fullName, rel.tagName) }
+        }
+    }
 
     selected?.let { sel ->
         uiState.projects.firstOrNull { it.fullName == sel.fullName }?.let { selected = it }
@@ -164,11 +287,12 @@ private fun TestPage(navController: NavHostController) {
         }
         items(uiState.projects.size) { i ->
             val project = uiState.projects[i]
+            val name = project.fullName.substringAfter("/")
             GrayButton(
                 onClick = { selected = project },
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
-                label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
+                label = { Text(if (project.hasUpdate) "🆕 $name" else name, maxLines = 1) },
                 secondaryLabel = {
                     if (project.loading) {
                         Text("加载中…", maxLines = 1)
@@ -327,6 +451,14 @@ private fun MorePage(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 icon = { Icon(Icons.Default.CloudUpload, contentDescription = null) },
                 label = { Text("应用上传", maxLines = 1) },
+            )
+        }
+        item {
+            GrayButton(
+                onClick = { navController.navigate("submit") },
+                modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                icon = { Icon(Icons.Default.Send, contentDescription = null) },
+                label = { Text("应用投稿", maxLines = 1) },
             )
         }
         if (settings.parseRepo(pushRepo) != null) {

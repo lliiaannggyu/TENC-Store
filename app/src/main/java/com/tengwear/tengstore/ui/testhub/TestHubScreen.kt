@@ -59,6 +59,13 @@ fun TestHubScreen(navController: NavHostController) {
 
     LaunchedEffect(Unit) { viewModel.load() }
 
+    // 打开详情即视为看过当前版本
+    LaunchedEffect(selected?.fullName) {
+        selected?.let { sel ->
+            sel.latest?.let { rel -> viewModel.markSeen(sel.fullName, rel.tagName) }
+        }
+    }
+
     // 详情页跟随列表数据刷新
     selected?.let { sel ->
         uiState.projects.firstOrNull { it.fullName == sel.fullName }?.let { selected = it }
@@ -267,11 +274,12 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
         else -> {
             val release = project.latest
             val apks = release?.apkAssets ?: emptyList()
+            val name = project.fullName.substringAfter("/")
             GrayButton(
                 onClick = onClick,
                 enabled = release != null,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
+                label = { Text(if (project.hasUpdate) "🆕 $name" else name, maxLines = 1) },
                 secondaryLabel = {
                     Text(
                         buildString {

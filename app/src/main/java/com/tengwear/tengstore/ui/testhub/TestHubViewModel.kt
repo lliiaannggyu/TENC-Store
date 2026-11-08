@@ -23,6 +23,8 @@ data class TestProject(
     /** 项目介绍：README 内容解析出的段落与图片。 */
     val intro: RepoIntro? = null,
     val introLoading: Boolean = true,
+    /** 最新版本比上次看过的版本新（列表显示 🆕 更新表情）。 */
+    val hasUpdate: Boolean = false,
 )
 
 data class TestHubUiState(
@@ -97,6 +99,8 @@ class TestHubViewModel : ViewModel() {
                         project.copy(
                             loading = false,
                             latest = release,
+                            hasUpdate = release != null &&
+                                AppContainer.settings.seenTagOf(fullName) != release.tagName,
                             error = if (release == null) "暂无带 APK 的版本" else null,
                         )
                     },
@@ -131,7 +135,26 @@ class TestHubViewModel : ViewModel() {
     private fun update(fullName: String, transform: (TestProject) -> TestProject) {
         val current = _uiState.value
         _uiState.value = current.copy(
-            projects = current.projects.map { if (it.fullName == fullName) transform(it) else it },
+            projects = current.projects
+                .map { if (it.fullName == fullName) transform(it) else it }
+                // 最新发布的排在最上面，其余依次递减；没有版本的排最后
+                .sortedWith(
+                    compareByDescending<TestProject> { it.latest?.publishedAt ?: "" }
+                        .thenBy { it.fullName },
+                ),
+        )
+    }
+
+    /** 打开详情即视为看过当前版本：持久化已看 tag 并去掉「有更新」表情。 */
+    fun markSeen(fullName: String, tag: String) {
+        AppContainer.settings.markSeenTag(fullName, tag)
+        val current = _uiState.value
+        val target = current.projects.firstOrNull { it.fullName == fullName } ?: return
+        if (!target.hasUpdate) return
+        _uiState.value = current.copy(
+            projects = current.projects.map {
+                if (it.fullName == fullName) it.copy(hasUpdate = false) else it
+            },
         )
     }
 

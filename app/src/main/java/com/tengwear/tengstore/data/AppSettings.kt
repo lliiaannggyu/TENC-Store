@@ -69,6 +69,20 @@ class AppSettings(private val context: Context) {
     private val _drawnRepos = MutableStateFlow(prefs.getStringSet(KEY_DRAWN_REPOS, emptySet()).orEmpty())
     val drawnRepos = _drawnRepos.asStateFlow()
 
+    /** 已看过的测试项目版本（repo → 最新已看 tag），用于「有更新」表情。 */
+    private val _seenTags = MutableStateFlow(readSeenTags())
+    val seenTags = _seenTags.asStateFlow()
+
+    /** 信息板块：上次已读时间戳（之后的邮件视为新信息）。 */
+    var lastInboxSeenAt: Long
+        get() = prefs.getLong(KEY_LAST_INBOX_SEEN, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_INBOX_SEEN, value).apply()
+
+    /** 审核结果：上次已读时间戳（之后的投稿结果触发全屏提醒）。 */
+    var lastReviewSeenAt: Long
+        get() = prefs.getLong(KEY_LAST_REVIEW_SEEN, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_REVIEW_SEEN, value).apply()
+
     fun addDrawnRepo(fullName: String) {
         val next = _drawnRepos.value + fullName
         prefs.edit().putStringSet(KEY_DRAWN_REPOS, next).apply()
@@ -160,6 +174,24 @@ class AppSettings(private val context: Context) {
         return if (parts?.size == 2) parts[0] to parts[1] else null
     }
 
+    /** 读取某项目已看过的最新版本 tag；没看过返回 null。 */
+    fun seenTagOf(fullName: String): String? = _seenTags.value[fullName]
+
+    /** 标记某项目已看到某版本（看过即不再显示「有更新」表情）。 */
+    fun markSeenTag(fullName: String, tag: String) {
+        val next = _seenTags.value.toMutableMap().apply { put(fullName, tag) }
+        prefs.edit().putString(KEY_SEEN_TAGS, org.json.JSONObject(next.toSortedMap()).toString()).apply()
+        _seenTags.value = next
+    }
+
+    private fun readSeenTags(): Map<String, String> = runCatching {
+        val json = prefs.getString(KEY_SEEN_TAGS, null) ?: return emptyMap()
+        val obj = org.json.JSONObject(json)
+        buildMap {
+            obj.keys().forEach { key -> put(key, obj.optString(key)) }
+        }
+    }.getOrDefault(emptyMap())
+
     private fun readString(key: String): String? = prefs.getString(key, null)
 
     private fun write(key: String, value: String?): String {
@@ -194,6 +226,10 @@ class AppSettings(private val context: Context) {
         /** 发布说明中携带测试口令的固定格式：[测试口令:XXXX]。 */
         const val TEST_CODE_MARKER_PREFIX = "[测试口令:"
         const val TEST_CODE_MARKER_SUFFIX = "]"
+
+        private const val KEY_SEEN_TAGS = "seen_release_tags"
+        private const val KEY_LAST_INBOX_SEEN = "last_inbox_seen_at"
+        private const val KEY_LAST_REVIEW_SEEN = "last_review_seen_at"
 
         /** 默认测试项目索引仓库。 */
         const val DEFAULT_TEST_HUB_REPO = "lliiaannggyu/TENC-TestHub"

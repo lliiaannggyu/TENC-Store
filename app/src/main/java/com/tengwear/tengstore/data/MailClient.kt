@@ -136,6 +136,8 @@ object MailClient {
     /** 校验通过的信息邮件：只含日志正文（口令行已剥离）。 */
     data class InboxMail(
         val from: String,
+        /** 邮件主题（用于区分日志 / 反馈 / 投稿 / 审核结果）。 */
+        val subject: String,
         val receivedAt: Long,
         val sentAt: Long,
         val body: String,
@@ -143,8 +145,8 @@ object MailClient {
 
     /**
      * 开发者端拉取信息（IMAP）：
-     * 只搜索主题含 [subjectKeyword] 且接收时间在最近 24 小时内的邮件，
-     * 逐封用 [LogToken.validate] 校验口令（解密发送时间与接收时间误差 ≤5 分钟），
+     * 只搜索主题含 [subjectKeyword]、接收时间在最近 [sinceHours] 小时内的邮件，
+     * 逐封用 [LogToken.validate] 校验口令（解密发送时间与接收时间误差 ≤ [windowMinutes] 分钟），
      * 只返回校验通过的邮件；不含口令或其他邮件一律不返回。
      *
      * @return 校验通过的信息列表；第二个值为错误描述（null 表示成功）。
@@ -153,6 +155,8 @@ object MailClient {
         email: String,
         authCode: String,
         subjectKeyword: String,
+        sinceHours: Long = 24,
+        windowMinutes: Long = sinceHours * 60,
     ): Pair<List<InboxMail>, String?> = withContext(Dispatchers.IO) {
         runCatching {
             val config = inferImap(email)
@@ -168,7 +172,7 @@ object MailClient {
             store.connect(config.host, email, authCode)
             val inbox = store.getFolder("INBOX")
             inbox.open(Folder.READ_ONLY)
-            val since = Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000L)
+            val since = Date(System.currentTimeMillis() - sinceHours * 60 * 60 * 1000L)
             val msgs = inbox.search(
                 AndTerm(
                     SubjectTerm(subjectKeyword),
@@ -178,11 +182,12 @@ object MailClient {
             val items = msgs.mapNotNull { msg ->
                 val received = runCatching { msg.receivedDate?.time }.getOrNull() ?: return@mapNotNull null
                 val body = textOf(msg)
-                val sentAt = LogToken.validate(body, received) ?: return@mapNotNull null
+                val sentAt = LogToken.validate(body, received, windowMinutes) ?: return@mapNotNull null
                 InboxMail(
                     from = runCatching {
                         (msg.from?.firstOrNull() as? InternetAddress)?.address ?: email
                     }.getOrDefault(email),
+                    subject = runCatching { msg.subject.orEmpty() }.getOrDefault(""),
                     receivedAt = received,
                     sentAt = sentAt,
                     body = body.substringBefore(LogToken.TOKEN_PREFIX).trim(),
@@ -197,19 +202,45 @@ object MailClient {
         )
     }
 
-    /** 递归提取邮件纯文本正文。 */
+    /** 递归提取邮件纯文本正文（text/html 兜底：剥标签取文本，避免正文为空）。 */
     private fun textOf(part: Part): String = runCatching {
         when {
             part.isMimeType("text/plain") -> part.content.toString()
+            part.isMimeType("text/html") -> stripHtml(part.content.toString())
             part.isMimeType("multipart/*") -> {
                 val mp = part.content as MimeMultipart
-                (0 until mp.count).mapNotNull { i ->
-                    runCatching { textOf(mp.getBodyPart(i)) }.getOrNull()
-                }.joinToString("\n")
+                var plain: String? = null
+                var html: String? = null
+                (0 until mp.count).forEach { i ->
+                    runCatching {
+                        val p = mp.getBodyPart(i)
+                        if (p.isMimeType("text/plain")) {
+                            plain = (plain.orEmpty() + "\n" + p.content.toString()).trim()
+                        } else if (p.isMimeType("text/html") && html == null) {
+                            html = stripHtml(p.content.toString())
+                        } else if (p.isMimeType("multipart/*") && plain == null) {
+                            val nested = runCatching { textOf(p) }.getOrNull()
+                            if (!nested.isNullOrBlank()) plain = nested
+                        }
+                    }
+                }
+                plain?.takeIf { it.isNotBlank() } ?: html.orEmpty()
             }
             else -> ""
         }
     }.getOrDefault("")
+
+    /** 粗略剥离 HTML 标签与实体，把网页正文还原为纯文本。 */
+    private fun stripHtml(html: String): String = html
+        .replace(Regex("(?is)<(script|style)[^>]*>.*?</\\1>"), "")
+        .replace(Regex("(?is)<br\\s*/?>|</p>|</div>|</tr>"), "\n")
+        .replace(Regex("(?s)<[^>]+>"), "")
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace(Regex("\n{3,}"), "\n\n")
+        .trim()
 }
 
 /** RFC 2047 编码邮件主题，保证中文主题不乱码。 */
