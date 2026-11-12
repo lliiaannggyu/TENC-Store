@@ -20,11 +20,32 @@ object DownloadTracker {
     private val _active = MutableStateFlow<Active?>(null)
     val active: StateFlow<Active?> = _active.asStateFlow()
 
+    /** 最近一次下载结束的通知（成功/失败），首页提示条展示后由界面消费。 */
+    data class Finished(val name: String, val success: Boolean, val at: Long = System.currentTimeMillis())
+
+    private val _finished = MutableStateFlow<Finished?>(null)
+    val finished: StateFlow<Finished?> = _finished.asStateFlow()
+
     fun update(name: String, progress: Int, soFar: Long, total: Long) {
         _active.value = Active(name, progress.coerceIn(0, 100), soFar, total)
     }
 
+    fun finish(name: String) {
+        _active.value = null
+        _finished.value = Finished(name, success = true)
+    }
+
+    fun finishFailed(name: String) {
+        _active.value = null
+        _finished.value = Finished(name, success = false)
+    }
+
     fun clear() {
         _active.value = null
+    }
+
+    /** 首页提示条展示后清除通知。 */
+    fun consumeFinished() {
+        _finished.value = null
     }
 }

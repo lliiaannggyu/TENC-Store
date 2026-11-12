@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Android
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.data.download.ApkDownloader
 import com.tengwear.tengstore.data.download.DownloadTracker
+import com.tengwear.tengstore.ui.util.LinearBar
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
 import com.tengwear.tengstore.ui.util.edgeSpacers
@@ -113,27 +114,6 @@ fun DownloadsScreen(navController: NavHostController) {
                 }
             }
         }
-    }
-}
-
-/** 条形进度条（Wear Material 1.3 未提供，自绘实现）。 */
-@Composable
-private fun LinearBar(progress: Float) {
-    val animated by animateFloatAsState(targetValue = progress.coerceIn(0f, 1f))
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(6.dp)
-            .clip(CircleShape)
-            .background(Color.Gray.copy(alpha = 0.35f)),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(animated)
-                .height(6.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF8AB4F8)),
-        )
     }
 }
 

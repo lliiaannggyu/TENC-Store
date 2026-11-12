@@ -56,10 +56,10 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                 DownloadTracker.update(asset.name, progress, soFar, total)
                 _state.value = DownloadUiState.Downloading(asset, progress, soFar, total)
             }.onSuccess { file ->
-                DownloadTracker.clear()
+                DownloadTracker.finish(file.name)
                 _state.value = DownloadUiState.Succeeded(asset, applyRename(file))
             }.onFailure { e ->
-                DownloadTracker.clear()
+                DownloadTracker.finishFailed(asset.name)
                 _state.value = DownloadUiState.Failed(
                     asset,
                     "下载失败：${e.message?.take(60) ?: "网络错误"}（已尝试直连与镜像）",

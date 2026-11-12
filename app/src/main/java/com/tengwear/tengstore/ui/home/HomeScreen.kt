@@ -226,7 +226,7 @@ fun HomeScreen(navController: NavHostController) {
     }
 }
 
-/** 页1：公告轮播（4:3）+ 测试应用列表裸露。 */
+/** 页1：公告轮播（4:3）+ 下载状态条 + 测试应用列表裸露。 */
 @Composable
 private fun TestPage(navController: NavHostController) {
     val viewModel: TestHubViewModel = viewModel()
@@ -234,6 +234,19 @@ private fun TestPage(navController: NavHostController) {
     var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
+
+    // 全局下载状态：正在下载显示进度条，刚结束显示提示条（8 秒后自动消失）
+    val downloadActive by com.tengwear.tengstore.data.download.DownloadTracker
+        .active.collectAsState()
+    val downloadFinished by com.tengwear.tengstore.data.download.DownloadTracker
+        .finished.collectAsState()
+
+    LaunchedEffect(downloadFinished) {
+        if (downloadFinished != null) {
+            kotlinx.coroutines.delay(8000)
+            com.tengwear.tengstore.data.download.DownloadTracker.consumeFinished()
+        }
+    }
 
     LaunchedEffect(Unit) { viewModel.load() }
 
@@ -277,6 +290,19 @@ private fun TestPage(navController: NavHostController) {
             AnnouncementBanner(
                 onOpen = { index -> navController.navigate("announcement/$index") },
             )
+        }
+
+        // 下载状态条：正在下载（进度）/ 下载结束（提示）
+        if (downloadActive != null || downloadFinished != null) {
+            item {
+                com.tengwear.tengstore.ui.util.DownloadStatusBar(
+                    active = downloadActive,
+                    finished = downloadFinished,
+                    onFinishedDismiss = {
+                        com.tengwear.tengstore.data.download.DownloadTracker.consumeFinished()
+                    },
+                )
+            }
         }
 
         item { ListHeader { Text("测试项目") } }
