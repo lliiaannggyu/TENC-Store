@@ -70,6 +70,7 @@ fun SearchScreen(navController: NavHostController) {
     ) {
         ScalingLazyColumn(
             state = listState,
+            autoCentering = null,
             modifier = Modifier.fillMaxSize(),
         ) {
         edgeSpacers()

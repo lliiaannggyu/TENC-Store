@@ -76,7 +76,7 @@ fun SearchResultScreen(navController: NavHostController, query: String) {
             return@ScreenScaffold
         }
 
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             item { ListHeader { Text("搜索结果") } }
 

@@ -126,6 +126,7 @@ fun SettingsScreen(navController: NavHostController) {
     ) {
         androidx.wear.compose.foundation.lazy.ScalingLazyColumn(
             state = listState,
+            autoCentering = null,
             modifier = Modifier.fillMaxSize(),
         ) {
         edgeSpacers()

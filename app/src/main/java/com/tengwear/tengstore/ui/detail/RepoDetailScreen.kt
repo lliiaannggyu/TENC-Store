@@ -59,7 +59,7 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             item { ListHeader { Text(fullName.substringAfter("/")) } }
 

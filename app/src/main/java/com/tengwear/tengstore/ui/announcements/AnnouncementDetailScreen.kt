@@ -41,7 +41,7 @@ fun AnnouncementDetailScreen(navController: NavHostController, index: Int) {
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             if (announcement == null) {
                 item { ListHeader { Text("公告") } }

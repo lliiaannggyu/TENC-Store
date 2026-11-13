@@ -97,7 +97,7 @@ fun TestHubScreen(navController: NavHostController) {
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             item { ListHeader { Text("测试项目") } }
 
@@ -152,7 +152,7 @@ internal fun ProjectDetailScreen(
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             item { ListHeader { Text(project.fullName.substringAfter("/")) } }
 

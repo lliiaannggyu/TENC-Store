@@ -74,7 +74,7 @@ fun InboxScreen(navController: NavHostController) {
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             item { ListHeader { Text("信息") } }
 

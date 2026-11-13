@@ -120,7 +120,7 @@ fun FileManagerScreen(navController: NavHostController) {
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
             item { ListHeader { Text("选择 APK 文件") } }
 

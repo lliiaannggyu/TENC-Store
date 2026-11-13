@@ -65,6 +65,7 @@ fun DownloadsScreen(navController: NavHostController) {
     ) {
         ScalingLazyColumn(
             state = listState,
+            autoCentering = null,
             modifier = Modifier.fillMaxSize(),
         ) {
         edgeSpacers()

@@ -85,6 +85,7 @@ fun UserReposScreen(navController: NavHostController, user: String) {
     ) {
         ScalingLazyColumn(
             state = listState,
+            autoCentering = null,
             modifier = Modifier.fillMaxSize(),
         ) {
         edgeSpacers()

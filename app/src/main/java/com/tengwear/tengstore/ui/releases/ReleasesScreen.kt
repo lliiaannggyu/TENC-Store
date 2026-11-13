@@ -42,6 +42,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
     ) {
         ScalingLazyColumn(
             state = listState,
+            autoCentering = null,
             modifier = Modifier.fillMaxSize(),
         ) {
         edgeSpacers()

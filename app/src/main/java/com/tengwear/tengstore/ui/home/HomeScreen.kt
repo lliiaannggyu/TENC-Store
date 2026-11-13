@@ -259,6 +259,7 @@ private fun TestPage(navController: NavHostController) {
 
     ScalingLazyColumn(
         state = listState,
+        autoCentering = null,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -346,6 +347,7 @@ private fun SearchPage(navController: NavHostController) {
 
     ScalingLazyColumn(
         state = listState,
+        autoCentering = null,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -411,6 +413,7 @@ private fun MorePage(navController: NavHostController) {
 
     ScalingLazyColumn(
         state = listState,
+        autoCentering = null,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {

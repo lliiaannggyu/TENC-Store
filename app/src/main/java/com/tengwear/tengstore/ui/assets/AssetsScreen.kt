@@ -44,6 +44,7 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
         ) {
             ScalingLazyColumn(
                 state = listState,
+                autoCentering = null,
                 modifier = Modifier.fillMaxSize(),
             ) {
         edgeSpacers()
