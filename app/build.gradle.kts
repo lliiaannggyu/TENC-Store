@@ -9,14 +9,12 @@ val secretProps = Properties().apply {
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.parcelize")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.tengwear.tengstore"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.tengwear.tengstore"
@@ -24,8 +22,8 @@ android {
         // 从 30（Wear OS 3 专属）降低后可适配更多手表与安卓设备
         minSdk = 25
         targetSdk = 34
-        versionCode = 50
-        versionName = "1.49"
+        versionCode = 51
+        versionName = "1.50"
 
         // 密码本来自本地 secrets.properties（不入库），编译期写入 BuildConfig
         buildConfigField(
@@ -72,16 +70,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-
-    composeOptions {
     }
 
     packaging {
@@ -100,8 +91,8 @@ android {
 
 dependencies {
     val composeVersion = "1.9.0"
-    // M3E 1.7+ 强制要求 compileSdk 37 + AGP 9.1（Gradle 9），当前工具链上限即 1.6.0
-    val wearComposeVersion = "1.6.0"
+    // 最新 Wear Compose Material 3（1.7.0 要求 compileSdk 37 + AGP 9.1，已升级到位）
+    val wearComposeVersion = "1.7.0"
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

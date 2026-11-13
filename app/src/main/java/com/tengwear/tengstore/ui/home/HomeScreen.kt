@@ -133,28 +133,6 @@ fun HomeScreen(navController: NavHostController) {
                     else -> MorePage(navController)
                 }
             }
-
-            // 页面指示器
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                repeat(3) { i ->
-                    val active = i == pagerState.currentPage
-                    Box(
-                        modifier = Modifier.padding(horizontal = 4.dp).size(7.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(if (active) 7.dp else 5.dp)
-                                .clip(CircleShape)
-                                .background(if (active) Color.White else Color.Gray.copy(alpha = 0.5f)),
-                        )
-                    }
-                }
-            }
         }
         // 全局时间（各页共用）
         TimeText(modifier = Modifier.align(Alignment.TopCenter))
