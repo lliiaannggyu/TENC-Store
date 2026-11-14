@@ -77,10 +77,16 @@ object AnnouncementsStore {
                     title = line.removePrefix("## ").trim()
                 }
                 title == null -> Unit // 标题前的内容忽略
-                image == null -> imageRegex.find(line)?.let { m ->
-                    image = resolveImageUrl(m.groupValues[1].trim(), owner, repoName)
+                else -> {
+                    val img = imageRegex.find(line)
+                    if (img != null && image == null) {
+                        // 节内第一张图作为轮播图，不并入正文
+                        image = resolveImageUrl(img.groupValues[1].trim(), owner, repoName)
+                    } else if (img == null) {
+                        // 纯文字行一律进正文（修复纯文字公告正文被丢弃的问题）
+                        body.appendLine(line)
+                    }
                 }
-                else -> body.appendLine(line)
             }
         }
         flush()
