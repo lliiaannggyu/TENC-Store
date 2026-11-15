@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.NewTagBadge
@@ -54,6 +56,7 @@ import com.tengwear.tengstore.ui.util.GrayButton
  */
 @Composable
 fun TestHubScreen(navController: NavHostController) {
+    val context = LocalContext.current
     val viewModel: TestHubViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     var selected by remember { mutableStateOf<TestProject?>(null) }
@@ -87,6 +90,12 @@ fun TestHubScreen(navController: NavHostController) {
                 val dev = detail.devEmail?.takeIf { it.isNotBlank() } ?: "none"
                 navController.navigate(
                     "feedback/${detail.fullName.replace("/", "~~")}/${java.net.URLEncoder.encode(dev, "UTF-8")}",
+                )
+            },
+            onShare = {
+                com.tengwear.tengstore.ui.util.ShareHelper.share(
+                    context,
+                    com.tengwear.tengstore.ui.util.ShareHelper.buildShareText(detail.fullName),
                 )
             },
         )
@@ -142,6 +151,7 @@ internal fun ProjectDetailScreen(
     onBack: () -> Unit,
     onDownload: () -> Unit,
     onFeedback: () -> Unit,
+    onShare: () -> Unit = {},
 ) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
@@ -193,6 +203,14 @@ internal fun ProjectDetailScreen(
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("反馈", maxLines = 1) },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
+                )
+            }
+            item {
+                GrayButton(
+                    onClick = onShare,
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("分享该应用", maxLines = 1) },
+                    icon = { Icon(Icons.Default.Share, contentDescription = null) },
                 )
             }
 

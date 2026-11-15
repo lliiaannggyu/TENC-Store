@@ -50,6 +50,22 @@ import java.net.URLDecoder
 fun WearApp() {
     WearGitHubStoreTheme {
         val navController: NavHostController = rememberSwipeDismissableNavController()
+
+        // 每次回到前台（含冷启动）检测剪贴板：命中「TENC Store 分享」内容自动跳到对应项目
+        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+        androidx.compose.runtime.DisposableEffect(navController, lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    com.tengwear.tengstore.ui.util.ShareHelper.handleClipboardOnResume(
+                        navController.context,
+                        navController,
+                    )
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
+
         SwipeDismissableNavHost(
             navController = navController,
             startDestination = "home",

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Share
 import androidx.wear.compose.material3.CircularProgressIndicator
 import coil.compose.AsyncImage
 import com.tengwear.tengstore.data.AppContainer
@@ -45,6 +46,7 @@ import com.tengwear.tengstore.ui.util.GrayButton
  */
 @Composable
 fun RepoDetailScreen(navController: NavHostController, fullName: String) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val viewModel: RepoDetailViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val settings = AppContainer.settings
@@ -162,6 +164,19 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
                 }
             }
 
+            item {
+                GrayButton(
+                    onClick = {
+                        com.tengwear.tengstore.ui.util.ShareHelper.share(
+                            context,
+                            com.tengwear.tengstore.ui.util.ShareHelper.buildShareText(fullName),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("分享该应用", maxLines = 1) },
+                    icon = { Icon(Icons.Default.Share, contentDescription = null) },
+                )
+            }
             item {
                 GrayButton(
                     onClick = { navController.popBackStack() },
