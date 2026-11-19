@@ -12,6 +12,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // 冷启动深链：tencstore://app/...（其他应用点更新/反馈/授权请求拉起）
         DeepLink.handle(intent?.data?.toString())
+        // 下载完成提醒需要通知权限（Android 13+ 运行时权限，重复请求系统会忽略）
+        com.tengwear.tengstore.data.download.DownloadService.requestPermission(this)
         setContent {
             WearApp()
         }

@@ -50,6 +50,9 @@ object DownloadQueue {
     private val semaphore = Semaphore(MAX_PARALLEL)
     private val seq = AtomicLong(1L)
     private val jobs = mutableMapOf<Long, Job>()
+    /** 上次已通知的完成/失败数量（避免重复发完成通知）。 */
+    private var lastNotifiedDone = 0
+    private var lastNotifiedFailed = 0
     private val downloader: ApkDownloader by lazy { ApkDownloader(AppContainer.context) }
 
     /** 把同一项目某版本的多个文件批量入队。返回入队数量。 */
@@ -66,6 +69,7 @@ object DownloadQueue {
                 }
             }
         }
+        startService()
         return added.size
     }
 
@@ -76,7 +80,17 @@ object DownloadQueue {
         jobs[task.id] = AppContainer.appScope.launch {
             semaphore.withPermit { runTask(task) }
         }
+        startService()
         return task.id
+    }
+
+    /** 拉起前台服务：应用退后台后下载继续 + 通知栏进度（UI 入口调用，不受后台启动限制）。 */
+    private fun startService() {
+        try {
+            DownloadService.start(AppContainer.context)
+        } catch (_: Exception) {
+            // 手表可能限制前台服务启动；下载仍在应用进程内继续
+        }
     }
 
     private suspend fun runTask(task: Task) {
@@ -138,6 +152,21 @@ object DownloadQueue {
             val done = current.count { it.state == State.SUCCESS }
             if (failed == 0) DownloadTracker.finish("$done 个文件下载完成")
             else DownloadTracker.finishFailed("$done 个完成，$failed 个失败")
+            // 队列空闲：发「下载完成」系统通知（仅结果变化时），并停止前台服务
+            if (done > 0 || failed > 0) {
+                val changed = done != lastNotifiedDone || failed != lastNotifiedFailed
+                lastNotifiedDone = done
+                lastNotifiedFailed = failed
+                if (changed) {
+                    try {
+                        DownloadService.onQueueIdle(AppContainer.context, done, failed)
+                        AppContainer.context.stopService(
+                            android.content.Intent(AppContainer.context, DownloadService::class.java),
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
+            }
         }
     }
 
@@ -164,6 +193,8 @@ object DownloadQueue {
         _tasks.value = _tasks.value.filter {
             it.state == State.QUEUED || it.state == State.DOWNLOADING
         }
+        lastNotifiedDone = 0
+        lastNotifiedFailed = 0
         DownloadTracker.consumeFinished()
     }
 

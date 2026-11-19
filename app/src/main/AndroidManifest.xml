@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Show the system download notification (API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 前台服务：应用退后台后下载继续（dataSync 类型） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Allow installing the downloaded APK -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- 内置文件管理器：浏览存储中的 APK -->
@@ -50,6 +53,12 @@
                 <data android:scheme="tencstore" android:host="app" />
             </intent-filter>
         </activity>
+
+        <!-- 下载前台服务：后台保活 + 进度通知 + 完成提醒 -->
+        <service
+            android:name=".data.download.DownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- 内置文本输入兜底页：设备缺少 Wear 输入法组件时替代官方 RemoteInput -->
         <activity
