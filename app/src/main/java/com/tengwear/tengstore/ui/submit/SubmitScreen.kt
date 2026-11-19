@@ -38,6 +38,7 @@ import androidx.wear.compose.material3.TimeText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MarkEmailRead
 import com.tengwear.tengstore.ui.util.RotaryScroll
@@ -68,6 +69,7 @@ fun SubmitScreen(navController: NavHostController) {
         when (pendingField) {
             "link" -> viewModel.setLink(value)
             "desc" -> viewModel.setDesc(value)
+            "appname" -> viewModel.setAppName(value)
         }
     }
 
@@ -108,6 +110,13 @@ fun SubmitScreen(navController: NavHostController) {
                         hint = "点按输入仓库链接",
                         icon = { Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     ) { ask("link", "输入 GitHub 仓库链接", uiState.link) }
+                    Divider()
+                    FormFieldRow(
+                        label = "应用名称",
+                        value = uiState.appName,
+                        hint = "可选，可中文，收录后显示",
+                        icon = { Icon(Icons.Default.Label, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    ) { ask("appname", "自定义应用名称（可中文，可留空）", uiState.appName) }
                     Divider()
                     FormFieldRow(
                         label = "一句话描述",

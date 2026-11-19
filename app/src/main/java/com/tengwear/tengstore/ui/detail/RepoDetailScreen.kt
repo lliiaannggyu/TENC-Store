@@ -13,10 +13,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material3.Button
@@ -27,6 +33,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
@@ -57,6 +64,14 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
 
     LaunchedEffect(fullName) { viewModel.init(fullName) }
 
+    // 快捷收录：静默校验当前令牌对测试应用仓库的权限，有权限才显示入口（不展示任何令牌/仓库信息）
+    var canAddToTestHub by remember { mutableStateOf(false) }
+    var addingToTestHub by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(fullName) {
+        canAddToTestHub = com.tengwear.tengstore.ui.util.TestHubAdder.hasAccess() == true
+    }
+
     ScreenScaffold(
             scrollState = listState,
         timeText = { TimeText() },
@@ -71,6 +86,7 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
+            item { com.tengwear.tengstore.ui.util.RepoNameTranslation(fullName) }
 
             val release = uiState.latest
             item {
@@ -161,6 +177,38 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
                                 .clip(RoundedCornerShape(12.dp)),
                         )
                     }
+                }
+            }
+
+            if (canAddToTestHub) {
+                item {
+                    GrayButton(
+                        onClick = {
+                            if (!addingToTestHub) {
+                                addingToTestHub = true
+                                scope.launch {
+                                    val r = com.tengwear.tengstore.ui.util.TestHubAdder.add(fullName)
+                                    addingToTestHub = false
+                                    Toast.makeText(
+                                        context,
+                                        when (r) {
+                                            is com.tengwear.tengstore.ui.util.TestHubAdder.Result.Success -> "已加入测试应用"
+                                            com.tengwear.tengstore.ui.util.TestHubAdder.Result.Already -> "该项目已在测试应用中"
+                                            com.tengwear.tengstore.ui.util.TestHubAdder.Result.NoAccess -> "当前令牌无权限"
+                                            com.tengwear.tengstore.ui.util.TestHubAdder.Result.NoToken -> "请先在设置里登录 GitHub 令牌"
+                                            is com.tengwear.tengstore.ui.util.TestHubAdder.Result.Error ->
+                                                "添加失败：${r.message}"
+                                        },
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        enabled = !addingToTestHub,
+                        label = { Text(if (addingToTestHub) "正在添加…" else "添加到测试应用", maxLines = 1) },
+                        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    )
                 }
             }
 

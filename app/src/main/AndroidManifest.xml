@@ -15,6 +15,14 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
+    <!-- 包可见性：让系统分享面板能发现可接收文本的应用（Android 11+ 必需） -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
+
     <application
         android:name=".WearGitHubStoreApplication"
         android:allowBackup="true"
@@ -33,6 +41,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- 跨应用深链：其他应用经 tencstore://app/{update|detail|feedback|auth}/... 直达商店对应页面 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tencstore" android:host="app" />
             </intent-filter>
         </activity>
 

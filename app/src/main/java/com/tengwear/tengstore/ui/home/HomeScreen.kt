@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
@@ -204,7 +205,7 @@ fun HomeScreen(navController: NavHostController) {
     }
 }
 
-/** 页1：公告轮播（4:3）+ 下载状态条 + 测试应用列表裸露。 */
+/** 页1：公告轮播（4:3）+ 搜索/切换行 + 下载状态条 + 测试应用列表 或 开发者列表。 */
 @Composable
 private fun TestPage(navController: NavHostController) {
     val viewModel: TestHubViewModel = viewModel()
@@ -212,6 +213,19 @@ private fun TestPage(navController: NavHostController) {
     var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
+
+    // 测试应用搜索关键词（空 = 显示全部）
+    var searchQuery by remember { mutableStateOf("") }
+    // 视图切换：false = 测试应用列表，true = 开发者列表
+    var showDevelopers by remember { mutableStateOf(false) }
+
+    val searchLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        com.tengwear.tengstore.ui.util.parseTextInputResult(result.data)?.let { q ->
+            searchQuery = q.trim()
+        }
+    }
 
     // 全局下载状态：正在下载显示进度条，刚结束显示提示条（8 秒后自动消失）
     val downloadActive by com.tengwear.tengstore.data.download.DownloadTracker
@@ -284,45 +298,113 @@ private fun TestPage(navController: NavHostController) {
             }
         }
 
-        item { ListHeader { Text("测试项目") } }
+        // 公告与列表之间的按钮行：左半搜索测试应用，右半切换 测试列表/开发者
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                GrayButton(
+                    onClick = {
+                        com.tengwear.tengstore.ui.util.launchTextInputSafely(
+                            searchLauncher,
+                            "搜索测试应用",
+                        )
+                    },
+                    modifier = Modifier.weight(1f).height(LIST_CHIP_HEIGHT),
+                    icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    label = { Text("搜索", maxLines = 1) },
+                    secondaryLabel = {
+                        Text(
+                            if (searchQuery.isBlank()) "测试应用" else searchQuery,
+                            maxLines = 1,
+                        )
+                    },
+                )
+                GrayButton(
+                    onClick = { showDevelopers = !showDevelopers },
+                    modifier = Modifier.weight(1f).height(LIST_CHIP_HEIGHT),
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    label = {
+                        Text(if (showDevelopers) "开发者" else "应用", maxLines = 1)
+                    },
+                    secondaryLabel = { Text("切换", maxLines = 1) },
+                )
+            }
+        }
+
         if (uiState.loading && uiState.projects.isEmpty()) {
             item { Text("读取索引中…", modifier = Modifier.padding(8.dp)) }
         }
         uiState.error?.let { err ->
             item { Text(err, modifier = Modifier.padding(8.dp)) }
         }
-        items(uiState.projects.size) { i ->
-            val project = uiState.projects[i]
-            val name = project.fullName.substringAfter("/")
-            GrayButton(
-                onClick = { selected = project },
-                modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
-                label = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(name, maxLines = 1)
-                        if (project.hasUpdate) {
-                            NewTagBadge(modifier = Modifier.padding(start = 4.dp))
-                        }
-                    }
-                },
-                secondaryLabel = {
-                    if (project.loading) {
-                        Text("加载中…", maxLines = 1)
-                    } else {
-                        project.latest?.tagName?.let { Text(it, maxLines = 1) }
-                    }
-                },
-            )
-        }
-        if (uiState.projects.isNotEmpty()) {
-            item {
+
+        if (showDevelopers) {
+            // 开发者列表：按 GitHub 账号统计测试应用里的开发者
+            item { ListHeader { Text("开发者") } }
+            val developers = uiState.projects
+                .map { it.fullName.substringBefore("/") }
+                .distinct()
+                .sorted()
+            developers.forEach { owner ->
+                val count = uiState.projects.count { it.fullName.substringBefore("/") == owner }
+                item(key = "dev_$owner") {
+                    GrayButton(
+                        onClick = { navController.navigate("user_repos/$owner") },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        label = { Text(owner, maxLines = 1) },
+                        secondaryLabel = { Text("$count 个应用 · 点看全部项目", maxLines = 1) },
+                    )
+                }
+            }
+            if (developers.isEmpty() && !uiState.loading) {
+                item { Text("暂无开发者数据", modifier = Modifier.padding(8.dp)) }
+            }
+        } else {
+            item { ListHeader { Text("测试项目") } }
+            val filtered = uiState.projects.filter { p ->
+                searchQuery.isBlank() ||
+                    p.title.contains(searchQuery, ignoreCase = true) ||
+                    p.fullName.contains(searchQuery, ignoreCase = true)
+            }
+            if (searchQuery.isNotBlank() && filtered.isEmpty()) {
+                item { Text("没有匹配「$searchQuery」的应用", modifier = Modifier.padding(8.dp)) }
+            }
+            items(filtered.size) { i ->
+                val project = filtered[i]
+                val name = project.title
                 GrayButton(
-                    onClick = { navController.navigate("testhub") },
+                    onClick = { selected = project },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                    label = { Text("查看全部", maxLines = 1) },
+                    icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(name, maxLines = 1)
+                            if (project.hasUpdate) {
+                                NewTagBadge(modifier = Modifier.padding(start = 4.dp))
+                            }
+                        }
+                    },
+                    secondaryLabel = {
+                        if (project.loading) {
+                            Text("加载中…", maxLines = 1)
+                        } else {
+                            project.latest?.tagName?.let { Text(it, maxLines = 1) }
+                        }
+                    },
                 )
+            }
+            if (filtered.isNotEmpty()) {
+                item {
+                    GrayButton(
+                        onClick = { navController.navigate("testhub") },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                        label = { Text("查看全部", maxLines = 1) },
+                    )
+                }
             }
         }
     }
@@ -474,6 +556,14 @@ private fun MorePage(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                 icon = { Icon(Icons.Default.Send, contentDescription = null) },
                 label = { Text("应用投稿", maxLines = 1) },
+            )
+        }
+        item {
+            GrayButton(
+                onClick = { navController.navigate("auth") },
+                modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                icon = { Icon(Icons.Default.Key, contentDescription = null) },
+                label = { Text("授权中心", maxLines = 1) },
             )
         }
         if (settings.parseRepo(pushRepo) != null) {

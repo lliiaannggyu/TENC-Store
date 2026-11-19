@@ -164,12 +164,14 @@ internal fun ProjectDetailScreen(
     ) {
         ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
         edgeSpacers()
-            item { ListHeader { Text(project.fullName.substringAfter("/")) } }
+            item { ListHeader { Text(project.title) } }
+            item { com.tengwear.tengstore.ui.util.RepoNameTranslation(project.fullName) }
 
             item {
                 Text(
                     buildString {
                         appendLine("项目：${project.fullName}")
+                        project.displayName?.let { appendLine("名称：$it") }
                         if (project.loading) {
                             appendLine("状态：加载中…")
                         } else if (release == null) {
@@ -272,13 +274,14 @@ internal fun ProjectDetailScreen(
 
 @Composable
 internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
+    val name = project.title
     when {
         project.loading -> {
             GrayButton(
                 onClick = {},
                 enabled = false,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
+                label = { Text(name, maxLines = 1) },
                 secondaryLabel = { Text("加载中…", maxLines = 1) },
                 icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
             )
@@ -287,7 +290,7 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
             GrayButton(
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
-                label = { Text(project.fullName.substringAfter("/"), maxLines = 1) },
+                label = { Text(name, maxLines = 1) },
                 secondaryLabel = { Text(project.error ?: "", maxLines = 1) },
                 icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
             )
@@ -295,7 +298,6 @@ internal fun ProjectChip(project: TestProject, onClick: () -> Unit) {
         else -> {
             val release = project.latest
             val apks = release?.apkAssets ?: emptyList()
-            val name = project.fullName.substringAfter("/")
             GrayButton(
                 onClick = onClick,
                 enabled = release != null,

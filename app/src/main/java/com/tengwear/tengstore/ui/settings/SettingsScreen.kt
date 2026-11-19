@@ -92,6 +92,7 @@ fun SettingsScreen(navController: NavHostController) {
     val smtpAuthCode by settings.smtpAuthCode.collectAsState()
     val testHubRepo by settings.testHubRepo.collectAsState()
     val announceRepo by settings.announceRepo.collectAsState()
+    val translateToken by settings.translateToken.collectAsState()
     val scope = rememberCoroutineScope()
     var verifying by rememberSaveable { mutableStateOf(false) }
     val listState = rememberScalingLazyListState()
@@ -111,6 +112,7 @@ fun SettingsScreen(navController: NavHostController) {
             FIELD_SMTP_CODE -> settings.setSmtpAuthCode(value)
             FIELD_TEST_HUB -> saveManagedRepo(value, isTestHub = true)
             FIELD_ANNOUNCE -> saveManagedRepo(value, isTestHub = false)
+            FIELD_TRANSLATE_TOKEN -> settings.setTranslateToken(value.trim())
         }
         AppContainer.log("设置", "已更新设置项：$pendingField")
     }
@@ -207,6 +209,38 @@ fun SettingsScreen(navController: NavHostController) {
                 )
             }
 
+            item { ListHeader { Text("翻译服务") } }
+            item {
+                GrayButton(
+                    onClick = { ask(FIELD_TRANSLATE_TOKEN, "输入你的彩云小译 Token") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("翻译令牌", maxLines = 1) },
+                    secondaryLabel = {
+                        Text(
+                            if (translateToken.isNullOrBlank()) "未设置 · 不翻译" else "已设置 · 额度归你",
+                            maxLines = 1,
+                        )
+                    },
+                    icon = { Icon(Icons.Default.Check, contentDescription = null) },
+                )
+            }
+            item {
+                GrayButton(
+                    onClick = { settings.setTranslateToken(null) },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    enabled = !translateToken.isNullOrBlank(),
+                    label = { Text("清除翻译令牌", maxLines = 1) },
+                    icon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                )
+            }
+            item {
+                Text(
+                    "仓库名翻译使用彩云小译：注册 platform.caiyunapp.com 可免费领 100 万字符/月。" +
+                        "令牌只存本机、额度只扣你自己的。数据来自-彩云小译。",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+
             item { ListHeader { Text("测试应用管理") } }
             item { TestContentManager() }
 
@@ -299,12 +333,31 @@ private fun TestContentManager() {
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<String?>(null) }
+    /** 正在改名的条目（原始行）。 */
+    var pendingRename by remember { mutableStateOf<String?>(null) }
     var formVisible by remember { mutableStateOf(false) }
     var formLink by rememberSaveable { mutableStateOf("") }
+    var formName by rememberSaveable { mutableStateOf("") }
     var formEmail by rememberSaveable { mutableStateOf("") }
     var formField by remember { mutableStateOf("") }
 
     fun display(line: String): String = DevMailCipher.parseRepo(line)?.first ?: line.trim()
+
+    /** 条目显示名：自定义名优先，其次仓库名。 */
+    fun displayName(line: String): String =
+        DevMailCipher.parseEntry(line)?.let { it.name ?: it.fullName.substringAfter("/") }
+            ?: line.trim()
+
+    /** 给一行设置 / 清除自定义名：替换 [name:...] 字段后返回新行。 */
+    fun withName(line: String, newName: String?): String {
+        val start = line.indexOf(DevMailCipher.NAME_PREFIX)
+        val cleaned = if (start >= 0) {
+            val end = line.indexOf(DevMailCipher.NAME_SUFFIX, start)
+            if (end > start) line.removeRange(start, end + DevMailCipher.NAME_SUFFIX.length) else line
+        } else line
+        val name = newName?.let { DevMailCipher.sanitizeName(it) }
+        return if (name != null) "${cleaned.trimEnd()} ${DevMailCipher.NAME_PREFIX}$name${DevMailCipher.NAME_SUFFIX}" else cleaned
+    }
 
     fun load() {
         val parts = settings.parseRepo(hubRepo)
@@ -371,7 +424,7 @@ private fun TestContentManager() {
         }
     }
 
-    /** 确认添加：解析链接 + 校验邮箱，生成「链接 [dev:加密邮箱]」一行追加到索引末尾。 */
+    /** 确认添加：解析链接 + 校验邮箱，生成「链接 [name:名] [dev:加密邮箱]」一行追加到索引末尾。 */
     fun confirmAdd() {
         val fullName = formLink.trim()
             .removePrefix("https://github.com/").removePrefix("http://github.com/")
@@ -389,12 +442,14 @@ private fun TestContentManager() {
             Toast.makeText(AppContainer.context, "邮箱格式不正确", Toast.LENGTH_SHORT).show()
             return
         }
-        val line = buildString {
+        val base = buildString {
             append("https://github.com/").append(fullName)
             if (email.isNotEmpty()) append(" ").append(DevMailCipher.encode(email))
         }
-        rewrite({ ls -> ls + line }, "已添加 $fullName")
+        val line = withName(base, formName)
+        rewrite({ ls -> ls + line }, "已添加 ${formName.ifBlank { fullName }}")
         formLink = ""
+        formName = ""
         formEmail = ""
         formVisible = false
     }
@@ -405,13 +460,26 @@ private fun TestContentManager() {
         val value = parseTextInputResult(result.data) ?: return@rememberLauncherForActivityResult
         when (formField) {
             "link" -> formLink = value
+            "name" -> formName = value
             "email" -> formEmail = value
+            "rename" -> {
+                val target = pendingRename ?: return@rememberLauncherForActivityResult
+                pendingRename = null
+                val newName = value.trim()
+                val line = withName(target, newName.takeIf { it.isNotEmpty() })
+                if (line != target.trim()) {
+                    rewrite(
+                        { ls -> ls.map { if (it.trim() == target.trim()) line else it } },
+                        "已改名：${displayName(line)}",
+                    )
+                }
+            }
         }
     }
 
-    fun askField(field: String, label: String) {
+    fun askField(field: String, label: String, prefill: String? = null) {
         formField = field
-        launchTextInputSafely(formLauncher, label)
+        launchTextInputSafely(formLauncher, label, prefill)
     }
 
     val scheme = MaterialTheme.colorScheme
@@ -451,10 +519,19 @@ private fun TestContentManager() {
             else -> lines?.forEachIndexed { i, line ->
                 if (i > 0) TableDivider()
                 SwipeDeleteRow(
-                    label = display(line),
-                    value = DevMailCipher.decodeFromLine(line) ?: "",
+                    label = displayName(line),
+                    value = DevMailCipher.decodeFromLine(line)
+                        ?: DevMailCipher.parseRepo(line)?.first ?: "",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     deleteContentDesc = "删除测试应用",
+                    onClick = {
+                        pendingRename = line
+                        formField = "rename"
+                        launchTextInputSafely(
+                            formLauncher,
+                            "输入「${displayName(line)}」的新名称（留空清除）",
+                        )
+                    },
                     onSwipePastThreshold = { pendingDelete = line },
                 )
             }
@@ -467,6 +544,12 @@ private fun TestContentManager() {
                     value = formLink,
                     hint = "点按输入链接或 owner/repo",
                 ) { askField("link", "输入测试应用仓库链接") }
+                TableDivider()
+                TableFieldRow(
+                    label = "应用名称",
+                    value = formName,
+                    hint = "可选，可中文，留空用仓库名",
+                ) { askField("name", "自定义应用名称（可中文，可留空）", formName) }
                 TableDivider()
                 TableFieldRow(
                     label = "开发者邮箱",
@@ -494,7 +577,7 @@ private fun TestContentManager() {
             visible = true,
             onDismissRequest = { pendingDelete = null },
             title = { Text("删除测试应用") },
-            text = { Text("确定从索引中移除「${display(line)}」吗？") },
+            text = { Text("确定从索引中移除「${displayName(line)}」吗？") },
             confirmButton = {
                 GrayButton(
                     onClick = {
@@ -502,7 +585,7 @@ private fun TestContentManager() {
                         val target = line.trim()
                         rewrite(
                             { ls -> ls.filterNot { it.trim() == target } },
-                            "已移除 ${display(line)}",
+                            "已移除 ${displayName(line)}",
                         )
                     },
                     label = { Text("删除") },
@@ -541,6 +624,7 @@ private fun SwipeDeleteRow(
     value: String,
     icon: @Composable () -> Unit,
     deleteContentDesc: String,
+    onClick: (() -> Unit)? = null,
     onSwipePastThreshold: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -579,13 +663,14 @@ private fun SwipeDeleteRow(
             )
         }
 
-        // 表层内容行（随左滑平移）
+        // 表层内容行（随左滑平移；点击行触发改名）
         Row(
             modifier = Modifier
                 .offset { IntOffset(offset.roundToInt(), 0) }
                 .fillMaxWidth()
                 .height(46.dp)
                 .background(scheme.surfaceContainerLow)
+                .clickable(enabled = onClick != null) { onClick?.invoke() }
                 .pointerInput(value) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
@@ -768,6 +853,7 @@ private const val FIELD_KEYWORDS = "keywords"
 private const val FIELD_DEV_EMAIL = "developer_email"
 private const val FIELD_SMTP_CODE = "smtp_auth_code"
 private const val FIELD_TEST_HUB = "test_hub_repo"
+private const val FIELD_TRANSLATE_TOKEN = "translate_token"
 private const val FIELD_ANNOUNCE = "announce_repo"
 
 /** 校验输入的 owner/repo，并用当前令牌验证推送权限，通过才保存。 */

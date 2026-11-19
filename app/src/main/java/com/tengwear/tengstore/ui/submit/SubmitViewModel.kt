@@ -21,6 +21,8 @@ data class SubmitUiState(
     val link: String = "",
     /** 一句话描述功能。 */
     val desc: String = "",
+    /** 自定义应用名称（可中文，可选；审核通过后写入测试索引，列表显示这个名字）。 */
+    val appName: String = "",
     /** 自动填写的投稿邮箱（= 已绑定的开发者邮箱）。 */
     val email: String = "",
     /** 从测试索引仓库 submit.txt 解密出的投稿收件邮箱（null = 未解析 / 未开放）。 */
@@ -58,6 +60,10 @@ class SubmitViewModel : ViewModel() {
 
     fun setDesc(value: String) {
         _uiState.value = _uiState.value.copy(desc = value, notice = null)
+    }
+
+    fun setAppName(value: String) {
+        _uiState.value = _uiState.value.copy(appName = value, notice = null)
     }
 
     fun dismissNotice() {
@@ -111,6 +117,9 @@ class SubmitViewModel : ViewModel() {
                     val body = buildString {
                         appendLine("== TENC Store 应用投稿 ==")
                         appendLine("链接: $link")
+                        if (state.appName.isNotBlank()) {
+                            appendLine("名称: ${DevMailCipher.sanitizeName(state.appName) ?: state.appName.trim()}")
+                        }
                         appendLine("描述: ${state.desc.trim()}")
                         appendLine("投稿人: $email")
                         appendLine("时间: ${timeFmt.format(Date())}")

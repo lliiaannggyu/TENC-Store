@@ -38,6 +38,8 @@ data class InboxItem(
     val sender: String? = null,
     /** 投稿：GitHub 链接（owner/repo 或完整链接）。 */
     val link: String? = null,
+    /** 投稿：自定义应用名称（收录后写入测试索引，列表显示这个名字）。 */
+    val appName: String? = null,
     /** 投稿：一句话描述功能（审核时必须可见）。 */
     val desc: String? = null,
     /** 投稿结果：通过 / 打回。 */
@@ -142,8 +144,11 @@ class InboxViewModel : ViewModel() {
                         return@withContext false // 已存在
                     }
                     val email = DevMailCipher.encode(item.replyTo ?: "")
+                    val name = item.appName?.let { DevMailCipher.sanitizeName(it) }
                     val newLine = buildString {
                         append("https://github.com/").append(link)
+                        if (name != null) append(" ").append(DevMailCipher.NAME_PREFIX)
+                            .append(name).append(DevMailCipher.NAME_SUFFIX)
                         if (item.replyTo != null) append(" ").append(email)
                     }
                     AppContainer.gitHubRepository.updateTextFile(
@@ -257,7 +262,7 @@ class InboxViewModel : ViewModel() {
         const val LOG_SUBJECT = "TENC Store"
 
         /** 识别为字段行的键（值单列展示，不混入正文）。 */
-        private val FIELD_KEYS = setOf("项目", "类型", "反馈人", "链接", "投稿人", "结果", "理由")
+        private val FIELD_KEYS = setOf("项目", "名称", "类型", "反馈人", "链接", "投稿人", "结果", "理由")
 
         /** 值并入正文的键（修复「信息没有正文」：内容/描述才是正文本体）。 */
         private val CONTENT_KEYS = setOf("内容", "描述")
@@ -302,6 +307,7 @@ class InboxViewModel : ViewModel() {
                 type = fields["类型"],
                 sender = fields["反馈人"] ?: fields["投稿人"],
                 link = fields["链接"],
+                appName = fields["名称"],
                 desc = fields["描述"],
                 reviewResult = fields["结果"],
                 reviewReason = fields["理由"],

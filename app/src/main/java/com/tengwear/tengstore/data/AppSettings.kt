@@ -16,6 +16,75 @@ class AppSettings(private val context: Context) {
     private val _token = MutableStateFlow(readString(KEY_TOKEN))
     val token = _token.asStateFlow()
 
+    /** 使用协议：是否已在软件开头阅读并确认（滑动到协议底部后才能确认）。 */
+    private val _agreementAccepted =
+        MutableStateFlow(prefs.getBoolean(KEY_AGREEMENT_ACCEPTED, false))
+    val agreementAccepted = _agreementAccepted.asStateFlow()
+
+    fun acceptAgreement() {
+        _agreementAccepted.value = true
+        prefs.edit().putBoolean(KEY_AGREEMENT_ACCEPTED, true).apply()
+    }
+
+    /**
+     * 授权记录：商店给本机其他应用签发的授权（邮箱等），仅存本地。
+     * 每条：应用名 | 被授权邮箱 | 签发时间 | 授权码（内置密码本加密，可验证归属）。
+     */
+    data class AuthGrant(
+        val app: String,
+        val email: String,
+        val createdAt: Long,
+        val code: String,
+    )
+
+    private val _authGrants = MutableStateFlow(readAuthGrants())
+    val authGrants = _authGrants.asStateFlow()
+
+    private fun readAuthGrants(): List<AuthGrant> =
+        (readString(KEY_AUTH_GRANTS) ?: "").lineSequence()
+            .mapNotNull { l ->
+                val p = l.split("|")
+                if (p.size >= 4) AuthGrant(p[0], p[1], p[2].toLongOrNull() ?: 0L, p.drop(3).joinToString("|")) else null
+            }
+            .toList()
+
+    private fun writeAuthGrants(grants: List<AuthGrant>) {
+        val text = grants.joinToString("\n") { "${it.app}|${it.email}|${it.createdAt}|${it.code}" }
+        _authGrants.value = grants
+        prefs.edit().putString(KEY_AUTH_GRANTS, text).apply()
+    }
+
+    /** 给 [app] 签发邮箱授权，返回授权码（加密文本，供被授权应用录入校验）。 */
+    fun addAuthGrant(app: String, email: String): AuthGrant {
+        val grant = AuthGrant(
+            app = app.trim(),
+            email = email.trim(),
+            createdAt = System.currentTimeMillis(),
+            code = com.tengwear.tengstore.ui.util.TimeToken.encryptText(
+                "TENC-GRANT app=$app email=$email time=${System.currentTimeMillis()}",
+                Secrets.LOG_CODEBOOK,
+            ),
+        )
+        writeAuthGrants(_authGrants.value + grant)
+        return grant
+    }
+
+    /** 撤销一条授权。 */
+    fun removeAuthGrant(grant: AuthGrant) {
+        writeAuthGrants(_authGrants.value.filterNot { it == grant })
+    }
+
+    /**
+     * 翻译令牌：用户自己申请的彩云小译 Token（仅存本地）。
+     * 应用不内置任何令牌，翻译额度全部消耗在用户自己的账户上。
+     */
+    private val _translateToken = MutableStateFlow(readString(KEY_TRANSLATE_TOKEN))
+    val translateToken = _translateToken.asStateFlow()
+
+    fun setTranslateToken(value: String?) {
+        _translateToken.value = write(KEY_TRANSLATE_TOKEN, value?.takeIf { it.isNotBlank() })
+    }
+
     private val _keywords = MutableStateFlow(readString(KEY_KEYWORDS) ?: "")
     val keywords = _keywords.asStateFlow()
 
@@ -230,6 +299,9 @@ class AppSettings(private val context: Context) {
         private const val KEY_SEEN_TAGS = "seen_release_tags"
         private const val KEY_LAST_INBOX_SEEN = "last_inbox_seen_at"
         private const val KEY_LAST_REVIEW_SEEN = "last_review_seen_at"
+        private const val KEY_AGREEMENT_ACCEPTED = "agreement_accepted"
+        private const val KEY_AUTH_GRANTS = "auth_grants"
+        private const val KEY_TRANSLATE_TOKEN = "translate_token"
 
         /** 默认测试项目索引仓库。 */
         const val DEFAULT_TEST_HUB_REPO = "lliiaannggyu/TENC-TestHub"

@@ -168,8 +168,9 @@ fun InboxScreen(navController: NavHostController) {
                             item.project?.let { appendLine("项目 $it") }
                             item.type?.let { appendLine("类型 $it") }
                             item.link?.let { appendLine("链接 $it") }
-                            // 审核投稿时必须能看见一句话描述
+                            // 审核投稿时必须能看见自定义应用名与一句话描述
                             if (item.kind == InboxKind.SUBMISSION) {
+                                item.appName?.takeIf { it.isNotBlank() }?.let { appendLine("应用名 $it") }
                                 appendLine(
                                     "一句话描述 " + (
                                         item.desc?.takeIf { it.isNotBlank() }

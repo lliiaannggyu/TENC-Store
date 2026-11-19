@@ -1,8 +1,10 @@
 package com.tengwear.tengstore.ui.util
 
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.navigation.NavHostController
 import com.tengwear.tengstore.BuildConfig
 
@@ -32,13 +34,30 @@ object ShareHelper {
         append("商店下载：${storeDownloadLink()}")
     }
 
-    /** 系统文本分享面板。 */
+    /**
+     * 分享文本（手表适配版）：
+     *  - 先把分享文本复制到剪贴板并 Toast 提示（手表上最稳的方式）；
+     *  - 若系统存在分享面板（ACTION_SEND 处理者），再尝试拉起，失败静默降级。
+     */
     fun share(context: Context, text: String) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
+        // 1. 复制到剪贴板（前台应用可写剪贴板，无需权限）
+        val copied = runCatching {
+            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("TENC Store share", text))
+        }.isSuccess
+        Toast.makeText(
+            context,
+            if (copied) "分享文本已复制，去聊天软件粘贴即可" else "复制失败，请重试",
+            Toast.LENGTH_SHORT,
+        ).show()
+        // 2. 尝试拉起系统分享面板（手表上多数没有，失败不影响复制结果）
+        val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
         }
-        context.startActivity(Intent.createChooser(intent, "分享应用"))
+        runCatching {
+            context.startActivity(Intent.createChooser(send, "分享应用"))
+        }
     }
 
     /** 从剪贴板文本提取分享的仓库（owner/repo）；不含分享标记时返回 null。 */

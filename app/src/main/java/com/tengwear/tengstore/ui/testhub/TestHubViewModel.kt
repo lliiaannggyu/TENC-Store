@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.data.DevMailCipher
+import com.tengwear.tengstore.data.RepoEntry
 import com.tengwear.tengstore.domain.model.Release
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,8 @@ data class TestProject(
     val fullName: String,          // owner/repo
     /** 项目开发者邮箱（repos.txt 中加密邮箱解密而来），未附带则为 null。 */
     val devEmail: String? = null,
+    /** 自定义显示名（repos.txt `[name:...]`，可中文）；null = 用仓库名。 */
+    val displayName: String? = null,
     val loading: Boolean = true,
     val error: String? = null,
     val latest: Release? = null,   // 最新 Release（含 APK 产物）
@@ -25,7 +28,10 @@ data class TestProject(
     val introLoading: Boolean = true,
     /** 最新版本比上次看过的版本新（列表显示 🆕 更新表情）。 */
     val hasUpdate: Boolean = false,
-)
+) {
+    /** 列表 / 详情标题：优先自定义名，其次仓库名。 */
+    val title: String get() = displayName ?: fullName.substringAfter("/")
+}
 
 data class TestHubUiState(
     val loading: Boolean = false,
@@ -76,9 +82,9 @@ class TestHubViewModel : ViewModel() {
                 } else {
                     _uiState.value = _uiState.value.copy(
                         loading = false,
-                        projects = list.map { TestProject(it.first, it.second) },
+                        projects = list.map { TestProject(it.fullName, it.devEmail, it.name) },
                     )
-                    list.forEach { (fullName, _) -> loadProject(fullName) }
+                    list.forEach { loadProject(it.fullName) }
                 }
             }
         }
@@ -167,14 +173,14 @@ class TestHubViewModel : ViewModel() {
 
         /**
          * 解析 repos.txt：每行一个 owner/repo 或完整 GitHub 网址，
-         * 可附带 `[dev:<加密开发者邮箱>]` 字段；忽略空行与 # 注释。
-         * @return (仓库 fullName, 解密后的开发者邮箱或 null)
+         * 可附带 `[name:自定义名]` 与 `[dev:<加密开发者邮箱>]` 字段；
+         * 忽略空行与 # 注释。
          */
-        fun parseProjects(text: String): List<Pair<String, String?>> = text.lineSequence()
+        fun parseProjects(text: String): List<RepoEntry> = text.lineSequence()
             .map { it.trim() }
             .filter { it.isNotEmpty() && !it.startsWith("#") }
-            .mapNotNull { DevMailCipher.parseRepo(it) }
-            .distinctBy { it.first }
+            .mapNotNull { DevMailCipher.parseEntry(it) }
+            .distinctBy { it.fullName }
             .toList()
     }
 }

@@ -1,6 +1,8 @@
 package com.tengwear.tengstore.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
@@ -51,6 +53,10 @@ fun WearApp() {
     WearGitHubStoreTheme {
         val navController: NavHostController = rememberSwipeDismissableNavController()
 
+        // 使用协议：首次使用（或未确认）时先展示协议页，滑动到底部确认后才进主页
+        val agreementAccepted by com.tengwear.tengstore.data.AppContainer.settings
+            .agreementAccepted.collectAsState()
+
         // 每次回到前台（含冷启动）检测剪贴板：命中「TENC Store 分享」内容自动跳到对应项目
         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
         androidx.compose.runtime.DisposableEffect(navController, lifecycleOwner) {
@@ -66,10 +72,31 @@ fun WearApp() {
             onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
         }
 
+        // 跨应用深链：其他应用 tencstore://app/... 拉起商店直达对应页面
+        androidx.compose.runtime.LaunchedEffect(agreementAccepted) {
+            if (!agreementAccepted) return@LaunchedEffect
+            com.tengwear.tengstore.ui.util.DeepLink.pending.collect { route ->
+                route?.let {
+                    navController.navigate(it)
+                    com.tengwear.tengstore.ui.util.DeepLink.consume()
+                }
+            }
+        }
+
         SwipeDismissableNavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = if (agreementAccepted) "home" else "agreement",
         ) {
+            composable("agreement") {
+                com.tengwear.tengstore.ui.agreement.UsageAgreementScreen(
+                    onAgreed = {
+                        com.tengwear.tengstore.data.AppContainer.settings.acceptAgreement()
+                        navController.navigate("home") {
+                            popUpTo("agreement") { inclusive = true }
+                        }
+                    },
+                )
+            }
             composable("home") {
                 HomeScreen(navController)
             }
@@ -159,6 +186,9 @@ fun WearApp() {
             }
             composable("settings") {
                 SettingsScreen(navController)
+            }
+            composable("auth") {
+                com.tengwear.tengstore.ui.auth.AuthCenterScreen(navController)
             }
             composable("update") {
                 UpdateScreen(navController)
