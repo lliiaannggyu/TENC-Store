@@ -45,20 +45,23 @@ class ApkDownloader(private val context: Context) {
 
     /**
      * 下载 [asset] 到应用下载目录，通过 [onProgress] 回调 (已下载字节, 总字节)。
+     * [subDir] 为项目子目录名（owner__repo），不同项目同名文件互不覆盖；为空则存根目录。
      * 总字节未知时为 -1。返回成功后的本地文件。
      */
     suspend fun download(
         asset: Asset,
         onProgress: (soFar: Long, total: Long) -> Unit,
+        subDir: String? = null,
     ): Result<File> = withContext(Dispatchers.IO) {
+        val dir = subDir?.takeIf { it.isNotBlank() }?.let { File(downloadDir(), it) } ?: downloadDir()
         val name = sanitize(asset.name)
-        val target = File(downloadDir(), name)
-        val partial = File(downloadDir(), "$name.part")
+        val target = File(dir, name)
+        val partial = File(dir, "$name.part")
         var lastError: Exception? = null
 
         for (url in candidateUrls(asset.downloadUrl)) {
             try {
-                partial.parentFile?.mkdirs()
+                dir.mkdirs()
                 if (partial.exists()) partial.delete()
                 if (target.exists()) target.delete()
 
@@ -209,10 +212,26 @@ class ApkDownloader(private val context: Context) {
         return downloadDir().listFiles()?.firstOrNull { it.name == target }
     }
 
-    /** All downloaded APK files, newest first. */
-    fun listDownloadedApks(): List<File> {
-        return downloadDir().listFiles()
-            ?.filter { it.name.endsWith(".apk", ignoreCase = true) }
+    /** All downloaded files (all types, all project sub-folders), newest first. */
+    fun listDownloadedFiles(): List<File> {
+        fun gather(dir: File): List<File> =
+            dir.listFiles()?.flatMap { entry ->
+                if (entry.isDirectory) gather(entry) else listOf(entry)
+            }.orEmpty()
+        return gather(downloadDir())
+            .filter { it.isFile && !it.name.endsWith(".part") }
+            .sortedByDescending { it.lastModified() }
+    }
+
+    /** All downloaded APK files (all project sub-folders), newest first. */
+    fun listDownloadedApks(): List<File> =
+        listDownloadedFiles().filter { it.name.endsWith(".apk", ignoreCase = true) }
+
+    /** All files of one project (owner/repo), newest first. */
+    fun listProjectFiles(fullName: String): List<File> {
+        val sub = fullName.replace("/", "__").replace(Regex("[^A-Za-z0-9_.-]"), "_")
+        return File(downloadDir(), sub).listFiles()
+            ?.filter { it.isFile && !it.name.endsWith(".part") }
             ?.sortedByDescending { it.lastModified() }
             ?: emptyList()
     }

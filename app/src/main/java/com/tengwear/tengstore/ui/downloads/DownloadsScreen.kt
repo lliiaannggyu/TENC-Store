@@ -6,61 +6,58 @@ import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
-import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
-import com.tengwear.tengstore.ui.util.RotaryScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.collectAsState
 import com.tengwear.tengstore.data.download.ApkDownloader
-import com.tengwear.tengstore.data.download.DownloadTracker
+import com.tengwear.tengstore.data.download.DownloadQueue
+import com.tengwear.tengstore.ui.util.RotaryScroll
 import com.tengwear.tengstore.ui.util.LinearBar
 import com.tengwear.tengstore.ui.util.formatSize
 import java.io.File
 import com.tengwear.tengstore.ui.util.edgeSpacers
 import com.tengwear.tengstore.ui.util.GrayButton
+import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 
+/** 我的下载：多任务队列（多项目多文件）+ 全部已下载文件（APK 可安装）。 */
 @Composable
 fun DownloadsScreen(navController: NavHostController) {
     val context = LocalContext.current
     val downloader = remember { ApkDownloader(context) }
-    var files by remember { mutableStateOf(downloader.listDownloadedApks()) }
-    val active by DownloadTracker.active.collectAsState()
+    var files by remember { mutableStateOf(downloader.listDownloadedFiles()) }
+    val queue by DownloadQueue.tasks.collectAsState()
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
-    // 下载进度变化 / 完成时刷新文件列表（完成后新文件即出现在列表中）
-    androidx.compose.runtime.LaunchedEffect(active) {
-        files = downloader.listDownloadedApks()
+    androidx.compose.runtime.LaunchedEffect(queue.size) {
+        files = downloader.listDownloadedFiles()
     }
 
     ScreenScaffold(
-            scrollState = listState,
+        scrollState = listState,
         timeText = { TimeText() },
     ) {
         ScalingLazyColumn(
@@ -68,47 +65,112 @@ fun DownloadsScreen(navController: NavHostController) {
             autoCentering = null,
             modifier = Modifier.fillMaxSize(),
         ) {
-        edgeSpacers()
+            edgeSpacers()
             item { ListHeader { Text("我的下载") } }
 
-            // 下载中：条形进度条
-            active?.let { a ->
-                item { ListHeader { Text("下载中") } }
-                item {
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
-                        Text(a.name, maxLines = 1)
-                        Spacer(Modifier.height(6.dp))
-                        LinearBar(progress = a.progress / 100f)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            buildString {
-                                append("${a.progress}%")
-                                if (a.total > 0) {
-                                    append(" · ${formatSize(a.soFar)} / ${formatSize(a.total)}")
+            // 多任务队列：每个文件独立进度，可取消 / 重试
+            val active = queue.filter {
+                it.state == DownloadQueue.State.QUEUED ||
+                    it.state == DownloadQueue.State.DOWNLOADING ||
+                    it.state == DownloadQueue.State.FAILED ||
+                    it.state == DownloadQueue.State.CANCELLED
+            }
+            if (active.isNotEmpty()) {
+                item { ListHeader { Text("下载队列（${active.size}）") } }
+                active.forEach { task ->
+                    item(key = "task_${task.id}") {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
+                            Text(
+                                when (task.state) {
+                                    DownloadQueue.State.QUEUED -> "排队：${task.label}"
+                                    DownloadQueue.State.DOWNLOADING -> "下载中：${task.label}"
+                                    DownloadQueue.State.FAILED -> "失败：${task.label}"
+                                    DownloadQueue.State.CANCELLED -> "已取消：${task.label}"
+                                    else -> task.label
+                                },
+                                maxLines = 2,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            LinearBar(progress = task.progress / 100f)
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                buildString {
+                                    append("${task.progress}%")
+                                    if (task.total > 0) {
+                                        append(" · ${formatSize(task.soFar)} / ${formatSize(task.total)}")
+                                    }
+                                    task.error?.let { append(" · $it") }
+                                },
+                                maxLines = 2,
+                            )
+                        }
+                    }
+                    item(key = "task_action_${task.id}") {
+                        GrayButton(
+                            onClick = {
+                                when (task.state) {
+                                    DownloadQueue.State.QUEUED,
+                                    DownloadQueue.State.DOWNLOADING -> DownloadQueue.cancel(task.id)
+                                    DownloadQueue.State.FAILED,
+                                    DownloadQueue.State.CANCELLED -> DownloadQueue.retry(task.id)
+                                    else -> Unit
                                 }
                             },
-                            maxLines = 1,
+                            modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                            icon = {
+                                Icon(
+                                    if (task.state == DownloadQueue.State.FAILED ||
+                                        task.state == DownloadQueue.State.CANCELLED
+                                    ) Icons.Default.Refresh else Icons.Default.Delete,
+                                    contentDescription = null,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    when (task.state) {
+                                        DownloadQueue.State.FAILED,
+                                        DownloadQueue.State.CANCELLED -> "重试"
+                                        else -> "取消"
+                                    },
+                                    maxLines = 1,
+                                )
+                            },
                         )
                     }
                 }
             }
 
+            if (queue.isNotEmpty()) {
+                item {
+                    GrayButton(
+                        onClick = { DownloadQueue.clearFinished() },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        label = { Text("清除已完成记录", maxLines = 1) },
+                        icon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                    )
+                }
+            }
+
             if (files.isEmpty()) {
-                if (active == null) {
+                if (queue.isEmpty()) {
                     item {
-                        Text("还没有下载过 APK。", modifier = Modifier.padding(8.dp))
+                        Text(
+                            "还没有下载过文件。到项目版本页点「下载本页全部」可批量下载。",
+                            modifier = Modifier.padding(8.dp),
+                        )
                     }
                 }
             } else {
-                item { ListHeader { Text("已完成") } }
+                item { ListHeader { Text("已下载（${files.size}）") } }
                 items(files.size) { i ->
                     val file = files[i]
+                    val isApk = file.name.endsWith(".apk", ignoreCase = true)
                     DownloadedChip(
                         file = file,
-                        onInstall = { installApk(context, file) },
+                        onInstall = { if (isApk) installApk(context, file) },
                         onDelete = {
                             if (downloader.delete(file)) {
-                                files = downloader.listDownloadedApks()
+                                files = downloader.listDownloadedFiles()
                             }
                         },
                     )
@@ -122,9 +184,12 @@ fun DownloadsScreen(navController: NavHostController) {
 private fun DownloadedChip(file: File, onInstall: () -> Unit, onDelete: () -> Unit) {
     GrayButton(
         onClick = onInstall,
+        enabled = file.name.endsWith(".apk", ignoreCase = true),
         label = { Text(file.name, maxLines = 2) },
-        secondaryLabel = { Text("点按安装 · ${formatSize(file.length())}", maxLines = 1) },
-        icon = { Icon(Icons.Default.Android, contentDescription = null) },
+        secondaryLabel = {
+            Text("${formatSize(file.length())} · ${file.parentFile?.name.orEmpty()}", maxLines = 1)
+        },
+        icon = { Icon(Icons.Default.FileDownload, contentDescription = null) },
     )
 }
 

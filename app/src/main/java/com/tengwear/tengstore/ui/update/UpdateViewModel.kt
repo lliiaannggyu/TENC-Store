@@ -89,11 +89,14 @@ class UpdateViewModel : ViewModel() {
         downloadJob?.cancel()
         downloadJob = viewModelScope.launch {
             _state.value = _state.value.copy(downloadProgress = 0)
-            ApkDownloader(AppContainer.context).download(asset) { soFar, total ->
-                val progress = if (total > 0) ((soFar * 100) / total).toInt().coerceIn(0, 100) else 0
-                DownloadTracker.update(asset.name, progress, soFar, total)
-                _state.value = _state.value.copy(downloadProgress = progress)
-            }.onSuccess { file ->
+            ApkDownloader(AppContainer.context).download(
+                asset,
+                onProgress = { soFar, total ->
+                    val progress = if (total > 0) ((soFar * 100) / total).toInt().coerceIn(0, 100) else 0
+                    DownloadTracker.update(asset.name, progress, soFar, total)
+                    _state.value = _state.value.copy(downloadProgress = progress)
+                },
+            ).onSuccess { file ->
                 DownloadTracker.clear()
                 _state.value = _state.value.copy(downloadProgress = null, downloadedFile = file)
             }.onFailure { e ->

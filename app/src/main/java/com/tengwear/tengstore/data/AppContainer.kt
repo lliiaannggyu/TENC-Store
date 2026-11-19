@@ -48,4 +48,7 @@ object AppContainer {
      * navigation without re-fetching.
      */
     val releaseCache: LinkedHashMap<Long, Release> = LinkedHashMap<Long, Release>(32)
+
+    /** Release id → 所属项目 owner/repo，供批量下载入队时标记项目。 */
+    val releaseOwner: LinkedHashMap<Long, String> = LinkedHashMap<Long, String>(32)
 }

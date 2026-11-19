@@ -67,6 +67,7 @@ fun ReleasesScreen(navController: NavHostController, fullName: String) {
                         val release = uiState.releases[i]
                         ReleaseChip(release = release) {
                             AppContainer.releaseCache[release.id] = release
+                            AppContainer.releaseOwner[release.id] = fullName
                             navController.navigate("assets/${release.id}")
                         }
                     }

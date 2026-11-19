@@ -155,6 +155,7 @@ internal fun ProjectDetailScreen(
 ) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
+    val detailContext = androidx.compose.ui.platform.LocalContext.current
     val release = project.latest
     val apks = release?.apkAssets ?: emptyList()
 
@@ -198,6 +199,26 @@ internal fun ProjectDetailScreen(
                     label = { Text("下载", maxLines = 1) },
                     icon = { Icon(Icons.Default.Download, contentDescription = null) },
                 )
+            }
+            if (release != null && release!!.assets.isNotEmpty()) {
+                item {
+                    GrayButton(
+                        onClick = {
+                            val n = com.tengwear.tengstore.data.download.DownloadQueue
+                                .enqueue(project.fullName, release.tagName, release.assets)
+                            android.widget.Toast.makeText(
+                                detailContext,
+                                "已加入 $n 个文件到下载队列",
+                                android.widget.Toast.LENGTH_SHORT,
+                            ).show()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        label = {
+                            Text("下载全部文件（${release.assets.size}）", maxLines = 1)
+                        },
+                        icon = { Icon(Icons.Default.Download, contentDescription = null) },
+                    )
+                }
             }
             item {
                 GrayButton(

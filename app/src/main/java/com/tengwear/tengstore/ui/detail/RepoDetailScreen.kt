@@ -121,6 +121,29 @@ fun RepoDetailScreen(navController: NavHostController, fullName: String) {
             }
             item {
                 GrayButton(
+                    onClick = {
+                        val rel = uiState.latest ?: return@GrayButton
+                        val n = com.tengwear.tengstore.data.download.DownloadQueue
+                            .enqueue(fullName, rel.tagName, rel.assets)
+                        Toast.makeText(
+                            context,
+                            if (n > 0) "已加入 $n 个文件到下载队列" else "该版本没有可下载文件",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    enabled = release != null && release!!.assets.isNotEmpty(),
+                    label = {
+                        Text(
+                            "下载全部文件（${release?.assets?.size ?: 0}）",
+                            maxLines = 1,
+                        )
+                    },
+                    icon = { Icon(Icons.Default.Download, contentDescription = null) },
+                )
+            }
+            item {
+                GrayButton(
                     onClick = { settings.toggleFavorite(fullName) },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text(if (isFavorite) "取消收藏" else "收藏", maxLines = 1) },

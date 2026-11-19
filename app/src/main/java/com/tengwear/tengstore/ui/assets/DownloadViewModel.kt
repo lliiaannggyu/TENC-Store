@@ -51,11 +51,14 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
 
         downloadJob?.cancel()
         downloadJob = viewModelScope.launch {
-            downloader.download(asset) { soFar, total ->
-                val progress = if (total > 0) ((soFar * 100) / total).toInt().coerceIn(0, 100) else 0
-                DownloadTracker.update(asset.name, progress, soFar, total)
-                _state.value = DownloadUiState.Downloading(asset, progress, soFar, total)
-            }.onSuccess { file ->
+            downloader.download(
+                asset,
+                onProgress = { soFar, total ->
+                    val progress = if (total > 0) ((soFar * 100) / total).toInt().coerceIn(0, 100) else 0
+                    DownloadTracker.update(asset.name, progress, soFar, total)
+                    _state.value = DownloadUiState.Downloading(asset, progress, soFar, total)
+                },
+            ).onSuccess { file ->
                 DownloadTracker.finish(file.name)
                 _state.value = DownloadUiState.Succeeded(asset, applyRename(file))
             }.onFailure { e ->

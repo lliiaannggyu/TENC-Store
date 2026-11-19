@@ -17,13 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
@@ -50,8 +49,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun AssetsScreen(navController: NavHostController, releaseId: Long) {
     val release = AppContainer.releaseCache[releaseId]
-    val viewModel: DownloadViewModel = viewModel()
-    val dlState by viewModel.state.collectAsState()
+    val fullName = AppContainer.releaseOwner[releaseId] ?: ""
+    val context = LocalContext.current
+    val queue by com.tengwear.tengstore.data.download.DownloadQueue.tasks.collectAsState()
+    val activeCount = queue.count {
+        it.state == com.tengwear.tengstore.data.download.DownloadQueue.State.DOWNLOADING ||
+            it.state == com.tengwear.tengstore.data.download.DownloadQueue.State.QUEUED
+    }
     val pagerState = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
 
@@ -99,6 +103,33 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
                         }
                     }
 
+                    // 批量下载：把本页所有文件一次性加入全局队列
+                    if (group.isNotEmpty()) {
+                        item {
+                            GrayButton(
+                                onClick = {
+                                    val n = com.tengwear.tengstore.data.download.DownloadQueue
+                                        .enqueue(fullName, release?.tagName ?: "", group)
+                                    if (n > 0) {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "已加入 $n 个文件到下载队列",
+                                            android.widget.Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                                icon = { Icon(Icons.Default.FileDownload, contentDescription = null) },
+                                label = {
+                                    Text(
+                                        "下载本页全部（${group.size} 个）",
+                                        maxLines = 1,
+                                    )
+                                },
+                            )
+                        }
+                    }
+
                     if (release == null) {
                         item { Text("未找到该版本。", modifier = Modifier.padding(8.dp)) }
                     } else if (group.isEmpty()) {
@@ -112,23 +143,26 @@ fun AssetsScreen(navController: NavHostController, releaseId: Long) {
                         items(group.size) { i ->
                             AssetChip(
                                 asset = group[i],
-                                onDownload = { viewModel.download(group[i]) },
+                                onDownload = {
+                                    com.tengwear.tengstore.data.download.DownloadQueue
+                                        .enqueueSingle(group[i], fullName, release?.tagName ?: "")
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "已加入下载队列：${group[i].name}",
+                                        android.widget.Toast.LENGTH_SHORT,
+                                    ).show()
+                                },
                             )
                         }
-                        when (val s = dlState) {
-                            is DownloadUiState.Downloading -> item {
-                                Text(
-                                    "正在下载 ${s.asset.name}，进度见「我的下载」",
-                                    modifier = Modifier.padding(8.dp),
+                        if (activeCount > 0) {
+                            item {
+                                GrayButton(
+                                    onClick = { navController.navigate("downloads") },
+                                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                                    icon = { Icon(Icons.Default.FileDownload, contentDescription = null) },
+                                    label = { Text("查看下载队列（$activeCount）", maxLines = 1) },
                                 )
                             }
-                            is DownloadUiState.Failed -> item {
-                                Text(
-                                    s.message ?: "下载失败，可在我的下载重试",
-                                    modifier = Modifier.padding(8.dp),
-                                )
-                            }
-                            else -> {}
                         }
                     }
                 }
