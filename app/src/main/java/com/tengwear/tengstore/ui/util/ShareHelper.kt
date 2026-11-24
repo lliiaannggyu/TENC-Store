@@ -7,6 +7,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.navigation.NavHostController
 import com.tengwear.tengstore.BuildConfig
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 应用分享助手：
@@ -67,21 +68,38 @@ object ShareHelper {
         return regex.find(text)?.groupValues?.get(1)?.trimEnd('.', '/')
     }
 
+    // ---- 剪贴板自动跳转（焦点式读取）----
+    // Android 10+ 读剪贴板不再走权限，而是要求应用窗口持有输入焦点；
+    // onResume 时机早于获焦，系统会静默返回空。因此在窗口获得焦点后读取。
+
+    private val _pendingJump = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
+    /** 待跳转的仓库 fullName（owner/repo），由窗口获焦时的剪贴板检测写入。 */
+    val pendingJump: kotlinx.coroutines.flow.StateFlow<String?> = _pendingJump.asStateFlow()
+
     /**
-     * 回到前台时检测剪贴板：有分享内容且当前在首页，自动跳到对应项目页并清除剪贴板，
-     * 避免重复跳转。
+     * 窗口获得焦点后调用（MainActivity.onWindowFocusChanged）：
+     * 读取剪贴板，命中「TENC Store 分享」标记时记下待跳转仓库。
+     * 跳转动作由 UI 层在首页消费 [pendingJump] 后执行。
      */
-    fun handleClipboardOnResume(context: Context, nav: NavHostController) {
-        if (nav.currentDestination?.route != "home") return
+    fun checkClipboardOnFocus(context: Context) {
+        if (_pendingJump.value != null) return
         val text = runCatching {
             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.primaryClip?.getItemAt(0)?.text?.toString()
         }.getOrNull() ?: return
         val repo = extractSharedRepo(text) ?: return
-        runCatching { nav.navigate("detail/${repo.replace("/", "~~")}") }
+        _pendingJump.value = repo
+    }
+
+    /** 跳转完成后清空待跳转记录与剪贴板（避免下次打开重复跳转）。 */
+    fun consumeJump(context: Context) {
+        _pendingJump.value = null
         runCatching {
-            (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                .clearPrimaryClip()
+            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                cm.clearPrimaryClip()
+            }
         }
     }
 }

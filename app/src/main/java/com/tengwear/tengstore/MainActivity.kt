@@ -24,4 +24,13 @@ class MainActivity : ComponentActivity() {
         // 热启动深链：应用已在前台/后台时再次被拉起
         DeepLink.handle(intent.data?.toString())
     }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Android 10+ 读剪贴板要求窗口持有输入焦点（没有"粘贴板权限"可申请）；
+        // onWindowFocusChanged(true) 是唯一可靠的读取时机，onResume 会读不到。
+        if (hasFocus) {
+            com.tengwear.tengstore.ui.util.ShareHelper.checkClipboardOnFocus(this)
+        }
+    }
 }

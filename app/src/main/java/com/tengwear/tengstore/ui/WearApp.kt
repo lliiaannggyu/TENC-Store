@@ -57,19 +57,25 @@ fun WearApp() {
         val agreementAccepted by com.tengwear.tengstore.data.AppContainer.settings
             .agreementAccepted.collectAsState()
 
-        // 每次回到前台（含冷启动）检测剪贴板：命中「TENC Store 分享」内容自动跳到对应项目
-        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-        androidx.compose.runtime.DisposableEffect(navController, lifecycleOwner) {
-            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                    com.tengwear.tengstore.ui.util.ShareHelper.handleClipboardOnResume(
-                        navController.context,
-                        navController,
-                    )
+        // 剪贴板自动跳转：窗口获焦时检测（MainActivity 侧），命中「TENC Store 分享」
+        // 内容后在首页自动跳到对应项目，并清空剪贴板避免重复跳转。
+        // 检测到时若不在首页，等回到首页再补跳转（300ms 轮询，最多等 30 秒）。
+        androidx.compose.runtime.LaunchedEffect(agreementAccepted) {
+            if (!agreementAccepted) return@LaunchedEffect
+            com.tengwear.tengstore.ui.util.ShareHelper.pendingJump.collect { repo ->
+                if (repo == null) return@collect
+                var waited = 0
+                while (navController.currentDestination?.route != "home" && waited < 30_000) {
+                    kotlinx.coroutines.delay(300)
+                    waited += 300
+                }
+                if (navController.currentDestination?.route == "home") {
+                    runCatching {
+                        navController.navigate("detail/${repo.replace("/", "~~")}")
+                    }
+                    com.tengwear.tengstore.ui.util.ShareHelper.consumeJump(navController.context)
                 }
             }
-            lifecycleOwner.lifecycle.addObserver(observer)
-            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
         }
 
         // 跨应用深链：其他应用 tencstore://app/... 拉起商店直达对应页面
