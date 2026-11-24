@@ -93,6 +93,7 @@ fun SettingsScreen(navController: NavHostController) {
     val testHubRepo by settings.testHubRepo.collectAsState()
     val announceRepo by settings.announceRepo.collectAsState()
     val translateToken by settings.translateToken.collectAsState()
+    val apiRemaining by com.tengwear.tengstore.data.remote.GitHubClient.remaining.collectAsState()
     val scope = rememberCoroutineScope()
     var verifying by rememberSaveable { mutableStateOf(false) }
     val listState = rememberScalingLazyListState()
@@ -157,8 +158,25 @@ fun SettingsScreen(navController: NavHostController) {
                     onClick = { ask(FIELD_TOKEN, "输入 GitHub 令牌") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     label = { Text("GitHub 令牌", maxLines = 1) },
-                    secondaryLabel = { Text(if (token.isNullOrBlank()) "未设置" else "已设置", maxLines = 1) },
+                    secondaryLabel = {
+                        Text(
+                            if (token.isNullOrBlank()) {
+                                "未设置 · 匿名仅 60 次/小时，容易 403"
+                            } else {
+                                "已设置 · 额度 5000 次/小时" +
+                                    (apiRemaining?.let { "（剩 $it）" } ?: "")
+                            },
+                            maxLines = 1,
+                        )
+                    },
                     icon = { Icon(Icons.Default.Key, contentDescription = null) },
+                )
+            }
+            item {
+                Text(
+                    "填自己的令牌（GitHub 设置 → Developer settings → Personal access tokens）" +
+                        "可避免公共 IP 额度被挤占导致的 403；令牌只存本机。",
+                    modifier = Modifier.padding(horizontal = 8.dp),
                 )
             }
             item {

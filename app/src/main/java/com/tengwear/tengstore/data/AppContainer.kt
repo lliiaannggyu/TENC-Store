@@ -33,7 +33,7 @@ object AppContainer {
         settings = AppSettings(context.applicationContext)
         logStore = LogStore(context.applicationContext)
         com.tengwear.tengstore.ui.theme.ThemePrefs.init(context.applicationContext)
-        GitHubClient.init(settings)
+        GitHubClient.init(settings, context.applicationContext)
         gitHubRepository = GitHubRepository(GitHubClient.api)
     }
 

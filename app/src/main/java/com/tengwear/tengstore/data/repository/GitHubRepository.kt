@@ -13,10 +13,37 @@ import com.tengwear.tengstore.domain.model.Repo
  */
 class GitHubRepository(private val api: GitHubApiService) {
 
+    companion object {
+        /** 本地短缓存：同一查询 5 分钟内不重复请求（搜索接口有独立的严格限额）。 */
+        private const val CACHE_TTL_MS = 5 * 60 * 1000L
+        private val memoryCache = object : LinkedHashMap<String, Pair<Long, Any>>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Long, Any>>?): Boolean =
+                size > 64
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private suspend fun <T> cached(key: String, load: suspend () -> T): T {
+            val now = System.currentTimeMillis()
+            val hit = memoryCache[key]
+            if (hit != null && now - hit.first < CACHE_TTL_MS) return hit.second as T
+            val value = load()
+            memoryCache[key] = now to (value as Any)
+            return value
+        }
+
+        /** 写操作成功后清空缓存，避免读到过期数据。 */
+        fun invalidateCache() {
+            memoryCache.clear()
+        }
+    }
+
     suspend fun search(query: String, page: Int = 1, perPage: Int = 30): List<Repo> {
         val q = query.trim()
         require(q.isNotBlank()) { "Query must not be blank" }
-        return api.searchRepositories(q, page = page, perPage = perPage).items.map { it.toDomain() }
+        val key = "search:$q:$page:$perPage"
+        return cached(key) {
+            api.searchRepositories(q, page = page, perPage = perPage).items.map { it.toDomain() }
+        }
     }
 
     /**
@@ -40,23 +67,23 @@ class GitHubRepository(private val api: GitHubApiService) {
     suspend fun searchUsers(query: String): List<String> {
         val q = query.trim()
         require(q.isNotBlank()) { "Query must not be blank" }
-        return api.searchUsers(q).items.map { it.login }
+        return cached("users:$q") { api.searchUsers(q).items.map { it.login } }
     }
 
     /** 列出指定用户的仓库（含私有仓库，需令牌有权限时 GitHub 自动附带）。 */
     suspend fun userRepos(user: String): List<Repo> {
-        return api.listUserRepos(user).map { it.toDomain() }
+        return cached("userrepos:$user") { api.listUserRepos(user).map { it.toDomain() } }
     }
 
     suspend fun releases(owner: String, repo: String): List<Release> {
-        return api.listReleases(owner, repo)
-            .map { it.toDomain() }
-            .filterNot { it.draft }
+        return cached("releases:$owner/$repo") {
+            api.listReleases(owner, repo).map { it.toDomain() }.filterNot { it.draft }
+        }
     }
 
     /** 列出当前令牌账号下的仓库（应用上传：选择目标仓库）。 */
     suspend fun myRepos(): List<Repo> {
-        return api.listMyRepos().map { it.toDomain() }
+        return cached("myrepos") { api.listMyRepos().map { it.toDomain() } }
     }
 
     /** 以文本形式读取仓库内文件（测试项目索引 repos.txt）。 */
@@ -102,6 +129,7 @@ class GitHubRepository(private val api: GitHubApiService) {
                 sha = sha,
             ),
         )
+        invalidateCache()
     }
 
     // Kept for documentation: which artifacts we consider downloadable.
