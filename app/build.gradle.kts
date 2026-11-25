@@ -10,6 +10,11 @@ val secretProps = Properties().apply {
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    // 小米手表 5 / OPPO 全智能手表 Wear Compose 兼容层：
+    // 注入缺失的 com.google.wear.input.WearHapticFeedbackConstants 桩类，
+    // 修复 Xiaomi Watch 5 因 ClassNotFoundException 导致的启动闪退；
+    // 同时补全表冠触觉震动常量（补丁由插件在编译期完成，无需改业务代码）。
+    id("cc.star0.wear.lib.cnwearoverlay") version "1.2.2"
 }
 
 android {
@@ -22,8 +27,8 @@ android {
         // 从 30（Wear OS 3 专属）降低后可适配更多手表与安卓设备
         minSdk = 25
         targetSdk = 34
-        versionCode = 63
-        versionName = "1.62"
+        versionCode = 64
+        versionName = "1.63"
 
         // 密码本来自本地 secrets.properties（不入库），编译期写入 BuildConfig
         buildConfigField(
