@@ -50,6 +50,8 @@ import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
 import com.tengwear.tengstore.ui.util.NewTagBadge
 import com.tengwear.tengstore.ui.util.RepoIcon
 import com.tengwear.tengstore.ui.util.RotaryScroll
+import com.tengwear.tengstore.ui.util.pullToRefresh
+import com.tengwear.tengstore.ui.util.rememberPullToRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
@@ -213,6 +215,7 @@ private fun TestPage(navController: NavHostController) {
     var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
+    val pullState = rememberPullToRefreshState()
 
     // 测试应用搜索关键词（空 = 显示全部）
     var searchQuery by remember { mutableStateOf("") }
@@ -240,6 +243,7 @@ private fun TestPage(navController: NavHostController) {
         }
     }
 
+    // 进应用只索引一次：缓存命中时 load() 直接复用缓存，不再重复索引
     LaunchedEffect(Unit) { viewModel.load() }
 
     // 打开详情即视为看过当前版本，「有更新」表情随之消失
@@ -275,9 +279,21 @@ private fun TestPage(navController: NavHostController) {
         state = listState,
         autoCentering = null,
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().pullToRefresh(
+            state = pullState,
+            listState = listState,
+            onRefresh = { viewModel.load(force = true) },
+        ),
     ) {
         edgeSpacers()
+        if (pullState.pullProgress.floatValue > 0f) {
+            item {
+                Text(
+                    if (pullState.pullProgress.floatValue >= 1f) "松开刷新索引…" else "下拉刷新索引…",
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+        }
         // 顶部公告轮播（4:3）
         item {
             AnnouncementBanner(
