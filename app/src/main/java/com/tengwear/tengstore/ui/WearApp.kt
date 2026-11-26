@@ -147,6 +147,13 @@ fun WearApp() {
                     (backStackEntry.arguments?.getString("fullName") ?: "").replace("~~", "/")
                 RepoDetailScreen(navController, fullName)
             }
+            // 测试项目详情（独立导航页）：从首页「测试」列表 / 测试项目页进入，
+            // 右滑与返回键会 popBackStack 回到列表，而不是作用于整个首页。
+            composable("project_detail/{fullName}") { backStackEntry ->
+                val fullName =
+                    (backStackEntry.arguments?.getString("fullName") ?: "").replace("~~", "/")
+                com.tengwear.tengstore.ui.testhub.ProjectDetailRoute(navController, fullName)
+            }
             composable("feedback/{fullName}/{devEmail}") { backStackEntry ->
                 val fullName = (backStackEntry.arguments?.getString("fullName") ?: "").replace("~~", "/")
                 val devEmail = backStackEntry.arguments?.getString("devEmail")
