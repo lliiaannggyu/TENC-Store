@@ -58,53 +58,14 @@ import com.tengwear.tengstore.ui.util.GrayButton
  */
 @Composable
 fun TestHubScreen(navController: NavHostController) {
-    val context = LocalContext.current
     val viewModel: TestHubViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
-    var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
     val pullState = rememberPullToRefreshState()
 
     // 进应用只索引一次：缓存命中时 load() 直接复用缓存，不再重复索引
     LaunchedEffect(Unit) { viewModel.load() }
-
-    // 打开详情即视为看过当前版本
-    LaunchedEffect(selected?.fullName) {
-        selected?.let { sel ->
-            sel.latest?.let { rel -> viewModel.markSeen(sel.fullName, rel.tagName) }
-        }
-    }
-
-    // 详情页跟随列表数据刷新
-    selected?.let { sel ->
-        uiState.projects.firstOrNull { it.fullName == sel.fullName }?.let { selected = it }
-    }
-
-    val detail = selected
-    if (detail != null) {
-        ProjectDetailScreen(
-            project = detail,
-            onBack = { selected = null },
-            onDownload = {
-                navController.navigate("releases/${detail.fullName.replace("/", "~~")}")
-            },
-            onFeedback = {
-                // devEmail 为空时用 "none" 占位，避免空路由段
-                val dev = detail.devEmail?.takeIf { it.isNotBlank() } ?: "none"
-                navController.navigate(
-                    "feedback/${detail.fullName.replace("/", "~~")}/${java.net.URLEncoder.encode(dev, "UTF-8")}",
-                )
-            },
-            onShare = {
-                com.tengwear.tengstore.ui.util.ShareHelper.share(
-                    context,
-                    com.tengwear.tengstore.ui.util.ShareHelper.buildShareText(detail.fullName),
-                )
-            },
-        )
-        return
-    }
 
     ScreenScaffold(
             scrollState = listState,
@@ -147,7 +108,9 @@ fun TestHubScreen(navController: NavHostController) {
 
             items(uiState.projects.size) { i ->
                 val project = uiState.projects[i]
-                ProjectChip(project = project) { selected = project }
+                ProjectChip(project = project) {
+                    navController.navigate("project_detail/${project.fullName.replace("/", "~~")}")
+                }
             }
 
             if (uiState.projects.isNotEmpty()) {
@@ -159,6 +122,77 @@ fun TestHubScreen(navController: NavHostController) {
                         icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 项目详情独立路由页（WearApp 中注册为 project_detail/{fullName}）。
+ *
+ * 关键修复：详情现在是导航栈上的独立页面，右滑（SwipeToDismissBox）与返回键
+ * 由 SwipeDismissableNavHost 处理，会 popBackStack 回到列表页。此前详情与列表
+ * 共用同一个 composable、仅用 selected 状态切换，手势作用于整个 home/testhub，
+ * 所以"右滑退回列表"无效——这正是用户反馈的问题。
+ */
+@Composable
+fun ProjectDetailRoute(navController: NavHostController, fullName: String) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val uiState by TestHubStore.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        // 缓存命中直接返回；进程重建等缓存为空时重新索引一次
+        TestHubStore.load()
+    }
+
+    val project = uiState.projects.firstOrNull { it.fullName == fullName }
+    LaunchedEffect(project?.latest?.tagName) {
+        project?.latest?.let { rel -> TestHubStore.markSeen(fullName, rel.tagName) }
+    }
+
+    if (project != null) {
+        ProjectDetailScreen(
+            project = project,
+            onBack = { navController.popBackStack() },
+            onDownload = {
+                navController.navigate("releases/${fullName.replace("/", "~~")}")
+            },
+            onFeedback = {
+                val dev = project.devEmail?.takeIf { it.isNotBlank() } ?: "none"
+                navController.navigate(
+                    "feedback/${fullName.replace("/", "~~")}/${java.net.URLEncoder.encode(dev, "UTF-8")}",
+                )
+            },
+            onShare = {
+                com.tengwear.tengstore.ui.util.ShareHelper.share(
+                    context,
+                    com.tengwear.tengstore.ui.util.ShareHelper.buildShareText(fullName),
+                )
+            },
+        )
+        return
+    }
+
+    // 缓存尚未就绪或项目已从索引移除：兜底页，同样可右滑/返回回到列表
+    val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
+    ScreenScaffold(scrollState = listState, timeText = { TimeText() }) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
+            edgeSpacers()
+            item { ListHeader { Text("项目详情") } }
+            item {
+                Text(
+                    if (uiState.loading) "项目信息加载中…" else "未找到该项目（可能已从索引移除）",
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+            item {
+                GrayButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    label = { Text("返回列表", maxLines = 1) },
+                    icon = { Icon(Icons.Default.ArrowBack, contentDescription = null) },
+                )
             }
         }
     }
