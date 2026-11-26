@@ -46,32 +46,57 @@ data class TestHubUiState(
  * 每行一个仓库链接；这些链接对应的仓库即要测试的项目。
  * 逐个拉取其最新 Release 与 APK 产物，点按即可进入下载安装。
  */
-class TestHubViewModel : ViewModel() {
-
+/**
+ * 测试列表的进程级缓存：首页「测试」页与「测试项目」页共享同一份数据，
+ * 进应用只索引一次；后续进入页面直接用缓存，只有下拉刷新（force=true）才重新索引。
+ * 项目的最新版本 / 介绍加载是带缓存的，缓存命中时不再发起网络请求。
+ */
+object TestHubStore {
     private val _uiState = MutableStateFlow(TestHubUiState())
     val uiState: StateFlow<TestHubUiState> = _uiState.asStateFlow()
 
-    fun load() {
+    /** 已成功索引过的仓库配置；为空表示还没索引过。 */
+    private var indexedRepo: String? = null
+    /** 是否已有有效的项目缓存（至少索引出过项目列表）。 */
+    private var hasCache: Boolean = false
+    /** 正在索引中，避免下拉刷新与页面进入重复触发。 */
+    private var indexing: Boolean = false
+    /** 已拉取过版本/介绍的项目，命中后不再重复加载。 */
+    private val loadedProjects = mutableSetOf<String>()
+
+    /**
+     * @param force true = 下拉刷新，强制重新读取索引并刷新每个项目的最新版本/介绍。
+     */
+    fun load(force: Boolean = false) {
         val settings = AppContainer.settings
-        val repo = settings.parseRepo(settings.testHubRepo.value)
+        val repoCfg = settings.testHubRepo.value.trim()
+        val repo = settings.parseRepo(repoCfg)
         if (repo == null) {
             _uiState.value = TestHubUiState(error = "未配置测试项目仓库，请到设置中指定 owner/repo")
             return
         }
-        _uiState.value = TestHubUiState(loading = true, hubRepo = settings.testHubRepo.value)
-        viewModelScope.launch {
+        // 缓存命中：同一仓库、已索引过、非强制刷新 → 直接复用，绝不重新索引
+        if (!force && hasCache && indexedRepo == repoCfg && _uiState.value.projects.isNotEmpty()) {
+            return
+        }
+        if (indexing) return
+        indexing = true
+        _uiState.value = _uiState.value.copy(loading = true, hubRepo = repoCfg, error = null)
+        AppContainer.appScope.launch {
             val entries = runCatching {
                 withContext(Dispatchers.IO) {
                     val body = AppContainer.gitHubRepository
                         .rawFile(repo.first, repo.second, "repos.txt")
-                    parseProjects(body)
+                    TestHubViewModel.parseProjects(body)
                 }
             }
+            indexing = false
             entries.onFailure { e ->
                 AppContainer.log("测试项目", "读取索引失败：${e.message}")
+                // 有旧缓存时保留列表，只提示刷新失败
                 _uiState.value = _uiState.value.copy(
                     loading = false,
-                    error = "读取索引失败：${e.message?.take(120)}",
+                    error = if (hasCache) "刷新失败：${e.message?.take(100)}" else "读取索引失败：${e.message?.take(120)}",
                 )
             }.onSuccess { list ->
                 if (list.isEmpty()) {
@@ -80,9 +105,17 @@ class TestHubViewModel : ViewModel() {
                         error = "索引中还没有指定任何测试项目：请在索引仓库的 repos.txt 里添加要测试的项目链接（不是本仓库自身）。",
                     )
                 } else {
+                    indexedRepo = repoCfg
+                    hasCache = true
+                    if (force) loadedProjects.clear()
+                    // 强制刷新时保留已有数据避免闪空，首次则构建新列表
+                    val existing = if (force) _uiState.value.projects.associateBy { it.fullName } else emptyMap()
                     _uiState.value = _uiState.value.copy(
                         loading = false,
-                        projects = list.map { TestProject(it.fullName, it.devEmail, it.name) },
+                        error = null,
+                        projects = list.map { entry ->
+                            existing[entry.fullName] ?: TestProject(entry.fullName, entry.devEmail, entry.name)
+                        },
                     )
                     list.forEach { loadProject(it.fullName) }
                 }
@@ -91,8 +124,9 @@ class TestHubViewModel : ViewModel() {
     }
 
     private fun loadProject(fullName: String) {
+        if (!loadedProjects.add(fullName)) return  // 已加载过，跳过（缓存命中）
         val parts = fullName.split("/")
-        viewModelScope.launch {
+        AppContainer.appScope.launch {
             val result = runCatching {
                 withContext(Dispatchers.IO) {
                     AppContainer.gitHubRepository.releases(parts[0], parts[1])
@@ -121,7 +155,7 @@ class TestHubViewModel : ViewModel() {
 
     /** 拉取仓库 README 解析为项目介绍（内容 + 图片）。 */
     private fun loadIntro(owner: String, repo: String) {
-        viewModelScope.launch {
+        AppContainer.appScope.launch {
             val intro = runCatching {
                 withContext(Dispatchers.IO) {
                     val md = README_CANDIDATES.firstNotNullOfOrNull { path ->
@@ -164,13 +198,20 @@ class TestHubViewModel : ViewModel() {
         )
     }
 
-    companion object {
-        /** README 常见文件名，按顺序尝试。 */
-        private val README_CANDIDATES = listOf(
-            "README.md", "readme.md", "README_EN.md", "README_zh.md",
-            "README.zh-CN.md", "Readme.md",
-        )
+    private val README_CANDIDATES = listOf(
+        "README.md", "readme.md", "README_EN.md", "README_zh.md",
+        "README.zh-CN.md", "Readme.md",
+    )
+}
 
+class TestHubViewModel : ViewModel() {
+    val uiState: StateFlow<TestHubUiState> = TestHubStore.uiState
+
+    fun load(force: Boolean = false) = TestHubStore.load(force)
+
+    fun markSeen(fullName: String, tag: String) = TestHubStore.markSeen(fullName, tag)
+
+    companion object {
         /**
          * 解析 repos.txt：每行一个 owner/repo 或完整 GitHub 网址，
          * 可附带 `[name:自定义名]` 与 `[dev:<加密开发者邮箱>]` 字段；
