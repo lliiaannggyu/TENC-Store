@@ -3,7 +3,6 @@ package com.tengwear.tengstore.ui.util
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.navigation.NavHostController
 import com.tengwear.tengstore.BuildConfig
@@ -21,6 +20,13 @@ object ShareHelper {
     /** 分享文本固定标记：剪贴板检测以此识别商店分享内容。 */
     const val SHARE_MARK = "TENC Store 分享"
 
+    /**
+     * 本应用最近一次「分享该应用」复制到剪贴板的文本。
+     * 焦点检测时若剪贴板内容与之相同，说明是自己刚复制的，直接忽略——
+     * 否则会被当成别人的分享而自动跳转并清空剪贴板，导致「复制文本分享」失效。
+     */
+    private var lastSelfCopiedText: String? = null
+
     /** 商店最新版 APK 下载直链（随 versionName 自动更新）。 */
     fun storeDownloadLink(): String {
         val v = BuildConfig.VERSION_NAME
@@ -37,28 +43,25 @@ object ShareHelper {
 
     /**
      * 分享文本（手表适配版）：
-     *  - 先把分享文本复制到剪贴板并 Toast 提示（手表上最稳的方式）；
-     *  - 若系统存在分享面板（ACTION_SEND 处理者），再尝试拉起，失败静默降级。
+     *  - 只做「复制到剪贴板 + Toast」这一件事，不再拉起 ACTION_SEND 分享面板。
+     *  - 关键：手表上拉起分享面板会切换窗口焦点，回来时 onWindowFocusChanged 会读到
+     *    自己刚复制的文本并误判为别人的分享，触发自动跳转 + 清空剪贴板，
+     *    这正是「复制了却粘贴不出来」的根因。
      */
     fun share(context: Context, text: String) {
-        // 1. 复制到剪贴板（前台应用可写剪贴板，无需权限）
         val copied = runCatching {
             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("TENC Store share", text))
         }.isSuccess
+        if (copied) {
+            // 记录自己复制的内容，供焦点检测时排除，避免自产自销式的误跳转/清空。
+            lastSelfCopiedText = text
+        }
         Toast.makeText(
             context,
             if (copied) "分享文本已复制，去聊天软件粘贴即可" else "复制失败，请重试",
             Toast.LENGTH_SHORT,
         ).show()
-        // 2. 尝试拉起系统分享面板（手表上多数没有，失败不影响复制结果）
-        val send = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        runCatching {
-            context.startActivity(Intent.createChooser(send, "分享应用"))
-        }
     }
 
     /** 从剪贴板文本提取分享的仓库（owner/repo）；不含分享标记时返回 null。 */
@@ -88,6 +91,9 @@ object ShareHelper {
             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.primaryClip?.getItemAt(0)?.text?.toString()
         }.getOrNull() ?: return
+        // 关键：若是本应用「分享该应用」刚复制的内容，忽略，绝不触发跳转/清空。
+        // 否则自己复制的文本会被自己检测成分享，跳转走且清空剪贴板，粘贴功能失效。
+        if (text == lastSelfCopiedText) return
         val repo = extractSharedRepo(text) ?: return
         _pendingJump.value = repo
     }
