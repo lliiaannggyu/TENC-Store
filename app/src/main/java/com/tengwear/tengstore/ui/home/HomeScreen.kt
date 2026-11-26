@@ -42,8 +42,6 @@ import com.tengwear.tengstore.data.AppContainer
 import com.tengwear.tengstore.data.MailClient
 import com.tengwear.tengstore.ui.inbox.InboxItem
 import com.tengwear.tengstore.ui.inbox.InboxViewModel
-import com.tengwear.tengstore.ui.testhub.ProjectDetailScreen
-import com.tengwear.tengstore.ui.testhub.TestProject
 import com.tengwear.tengstore.ui.testhub.TestHubViewModel
 import com.tengwear.tengstore.ui.util.GrayButton
 import com.tengwear.tengstore.ui.util.LIST_CHIP_HEIGHT
@@ -212,7 +210,6 @@ fun HomeScreen(navController: NavHostController) {
 private fun TestPage(navController: NavHostController) {
     val viewModel: TestHubViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
-    var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
     val pullState = rememberPullToRefreshState()
@@ -245,35 +242,6 @@ private fun TestPage(navController: NavHostController) {
 
     // 进应用只索引一次：缓存命中时 load() 直接复用缓存，不再重复索引
     LaunchedEffect(Unit) { viewModel.load() }
-
-    // 打开详情即视为看过当前版本，「有更新」表情随之消失
-    LaunchedEffect(selected?.fullName) {
-        selected?.let { sel ->
-            sel.latest?.let { rel -> viewModel.markSeen(sel.fullName, rel.tagName) }
-        }
-    }
-
-    selected?.let { sel ->
-        uiState.projects.firstOrNull { it.fullName == sel.fullName }?.let { selected = it }
-    }
-
-    val detail = selected
-    if (detail != null) {
-        ProjectDetailScreen(
-            project = detail,
-            onBack = { selected = null },
-            onDownload = {
-                navController.navigate("releases/${detail.fullName.replace("/", "~~")}")
-            },
-            onFeedback = {
-                val dev = detail.devEmail?.takeIf { it.isNotBlank() } ?: "none"
-                navController.navigate(
-                    "feedback/${detail.fullName.replace("/", "~~")}/${java.net.URLEncoder.encode(dev, "UTF-8")}",
-                )
-            },
-        )
-        return
-    }
 
     ScalingLazyColumn(
         state = listState,
@@ -392,7 +360,9 @@ private fun TestPage(navController: NavHostController) {
                 val project = filtered[i]
                 val name = project.title
                 GrayButton(
-                    onClick = { selected = project },
+                    onClick = {
+                        navController.navigate("project_detail/${project.fullName.replace("/", "~~")}")
+                    },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     icon = { RepoIcon(project.fullName, Modifier.size(22.dp)) },
                     label = {
