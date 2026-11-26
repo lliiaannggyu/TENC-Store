@@ -200,5 +200,17 @@ fun WearApp() {
                 UpdateScreen(navController)
             }
         }
+
+        // 全局返回拦截：右滑与返回键一律只「返回上一级」，绝不退出应用。
+        // SwipeDismissableNavHost 内部在首页（backStack.size == 1）时会禁用自身的返回处理，
+        // 此时返回/系统右滑手势会落到 Activity 默认行为，直接退出应用。
+        // 这里在 NavHost 之后（组合顺序更靠后 = 优先级更高）注册一个始终启用的 BackHandler 接管：
+        // 有上一级就 popBackStack 回到上一页；已在首页则消费事件、什么都不做，从而不退出。
+        androidx.activity.compose.BackHandler(enabled = true) {
+            if (navController.previousBackStackEntry != null) {
+                navController.popBackStack()
+            }
+            // 已在首页/协议页：不调用 finish，事件被本 Handler 消费，应用保持驻留。
+        }
     }
 }
