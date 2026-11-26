@@ -1,6 +1,9 @@
 package com.tengwear.tengstore.ui.theme
 
+import android.app.Activity
+import android.graphics.drawable.ColorDrawable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.dynamicColorScheme
@@ -26,6 +29,21 @@ fun WearGitHubStoreTheme(content: @Composable () -> Unit) {
 
         else -> colorSchemeFromSeed(seed.seed!!)
     }
+    // 窗口底色跟随当前主题背景色：动态取色/种子色主题下，页面切换与冷启动时
+    // 窗口先绘制的底色与 Compose 内容底色一致，消除「闪一下黑背景」。
+    DisposableEffect(colorScheme.background) {
+        val activity = context as? Activity
+        val bg = colorScheme.background
+        val argb = android.graphics.Color.argb(
+            (bg.alpha * 255).toInt(),
+            (bg.red * 255).toInt(),
+            (bg.green * 255).toInt(),
+            (bg.blue * 255).toInt(),
+        )
+        activity?.window?.setBackgroundDrawable(ColorDrawable(argb))
+        onDispose { }
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
         content = content,
