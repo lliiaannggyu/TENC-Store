@@ -33,6 +33,8 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import com.tengwear.tengstore.ui.util.RotaryScroll
+import com.tengwear.tengstore.ui.util.pullToRefresh
+import com.tengwear.tengstore.ui.util.rememberPullToRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowBack
@@ -62,7 +64,9 @@ fun TestHubScreen(navController: NavHostController) {
     var selected by remember { mutableStateOf<TestProject?>(null) }
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
+    val pullState = rememberPullToRefreshState()
 
+    // 进应用只索引一次：缓存命中时 load() 直接复用缓存，不再重复索引
     LaunchedEffect(Unit) { viewModel.load() }
 
     // 打开详情即视为看过当前版本
@@ -106,8 +110,24 @@ fun TestHubScreen(navController: NavHostController) {
             scrollState = listState,
         timeText = { TimeText() },
     ) {
-        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(
+            state = listState,
+            autoCentering = null,
+            modifier = Modifier.fillMaxSize().pullToRefresh(
+                state = pullState,
+                listState = listState,
+                onRefresh = { viewModel.load(force = true) },
+            ),
+        ) {
         edgeSpacers()
+            if (pullState.pullProgress.floatValue > 0f) {
+                item {
+                    Text(
+                        if (pullState.pullProgress.floatValue >= 1f) "松开刷新索引…" else "下拉刷新索引…",
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+            }
             item { ListHeader { Text("测试项目") } }
 
             item {
@@ -133,7 +153,7 @@ fun TestHubScreen(navController: NavHostController) {
             if (uiState.projects.isNotEmpty()) {
                 item {
                     GrayButton(
-                        onClick = { viewModel.load() },
+                        onClick = { viewModel.load(force = true) },
                         modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                         label = { Text("刷新", maxLines = 1) },
                         icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
