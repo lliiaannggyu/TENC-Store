@@ -203,6 +203,9 @@ fun WearApp() {
             composable("auth") {
                 com.tengwear.tengstore.ui.auth.AuthCenterScreen(navController)
             }
+            composable("auth_pick") {
+                com.tengwear.tengstore.ui.auth.AppPickerScreen(navController)
+            }
             composable("update") {
                 UpdateScreen(navController)
             }
