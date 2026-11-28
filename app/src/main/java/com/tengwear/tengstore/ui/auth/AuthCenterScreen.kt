@@ -3,6 +3,8 @@ package com.tengwear.tengstore.ui.auth
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.ScreenScaffold
@@ -49,12 +51,14 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 授权中心：商店给本机其他应用签发授权（包括但不限于邮箱授权，把绑定邮箱授权给
- * 其他应用当账号使用）。每条授权生成一个加密授权码（复制后可粘贴到被授权应用录入），
- * 授权记录仅存本机，随时可撤销。
+ * 授权中心：商店给本机其他应用签发授权（通用服务，包括但不限于邮箱授权，把绑定邮箱
+ * 授权给其他应用当账号使用）。每条授权生成一个加密授权码（复制后可粘贴到被授权应用
+ * 录入），授权记录仅存本机，随时可撤销。
  *
- * 其他应用也可通过深链 `tencstore://app/auth/{应用名}` 发起授权请求，商店确认后
- * 自动签发并把授权码复制到剪贴板。
+ * 授权协议 v2：任意本机应用均可通过深链
+ * `tencstore://app/auth/{应用名}?n={nonce}&d={设备指纹}&cb={回调URI}` 发起授权请求
+ * （三个参数均可缺省）。确认页锁定应用名；签发成功后若带回调 URI 则免剪贴板直传
+ * （回跳请求方应用并附 code），同时保留复制到剪贴板兜底。加密算法与密码本不变。
  */
 @Composable
 fun AuthCenterScreen(navController: NavHostController) {
@@ -64,14 +68,32 @@ fun AuthCenterScreen(navController: NavHostController) {
     val listState = rememberScalingLazyListState()
     RotaryScroll(listState)
 
-    // 深链预填的授权请求应用名：进入页面即弹确认
+    // 深链预填的授权请求：进入页面即弹确认（协议 v2：n/d/cb 一并消费后清空）
     val requestedApp = com.tengwear.tengstore.ui.util.DeepLink.pendingAuthApp.value
     var pendingGrantApp by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingGrantNonce by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingGrantDevice by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingGrantCallback by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(requestedApp) {
         if (requestedApp != null) {
+            val dl = com.tengwear.tengstore.ui.util.DeepLink
             pendingGrantApp = requestedApp
-            com.tengwear.tengstore.ui.util.DeepLink.pendingAuthApp.value = null
+            pendingGrantNonce = dl.pendingAuthNonce.value
+            pendingGrantDevice = dl.pendingAuthDevice.value
+            pendingGrantCallback = dl.pendingAuthCallback.value
+            dl.pendingAuthApp.value = null
+            dl.pendingAuthNonce.value = null
+            dl.pendingAuthDevice.value = null
+            dl.pendingAuthCallback.value = null
         }
+    }
+
+    /** 关闭待确认的授权请求（丢弃未处理的 nonce/device/callback）。 */
+    fun clearPendingGrant() {
+        pendingGrantApp = null
+        pendingGrantNonce = null
+        pendingGrantDevice = null
+        pendingGrantCallback = null
     }
 
     // 刚签发的授权码（弹窗展示 + 复制）——AuthGrant 非 Saveable，用 remember
@@ -79,7 +101,18 @@ fun AuthCenterScreen(navController: NavHostController) {
 
     var pendingRevoke by remember { mutableStateOf<AppSettings.AuthGrant?>(null) }
 
-    fun issue(appName: String) {
+    /**
+     * 签发授权（通用协议 v2）：
+     *  - 手动新增（无深链）：nonce/device/callback 全为 null，行为与旧版一致；
+     *  - 深链请求：携带请求方的 nonce/device，签发后若带回调 URI 则
+     *    免剪贴板直传（回跳请求方应用并附 code），同时保留剪贴板兜底。
+     */
+    fun issue(
+        appName: String,
+        nonce: String? = null,
+        device: String? = null,
+        callback: String? = null,
+    ) {
         val app = appName.trim()
         if (app.isBlank()) {
             Toast.makeText(AppContainer.context, "请先填写要授权的应用名", Toast.LENGTH_SHORT).show()
@@ -93,14 +126,25 @@ fun AuthCenterScreen(navController: NavHostController) {
             ).show()
             return
         }
-        val grant = settings.addAuthGrant(app, developerEmail)
+        val grant = settings.addAuthGrant(app, developerEmail, nonce, device)
         issuedGrant = grant
-        // 授权码自动复制到剪贴板，方便粘贴到被授权应用
+        // 剪贴板兜底：无论是否回跳都复制，保证手动粘贴路径始终可用
         runCatching {
             val cm = AppContainer.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("TENC Store 授权码", grant.code))
         }
         AppContainer.log("授权中心", "已授权 $app（邮箱 $developerEmail）")
+        // 协议 v2：带回调 URI 时免剪贴板直传授权码——回跳请求方应用
+        callback?.takeIf { it.isNotBlank() }?.let { cb ->
+            runCatching {
+                val sep = if (cb.contains('?')) '&' else '?'
+                AppContainer.context.startActivity(
+                    Intent(Intent.ACTION_VIEW)
+                        .setData(Uri.parse("$cb${sep}code=${Uri.encode(grant.code)}"))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            }.onFailure { AppContainer.log("授权中心", "回调失败：${it.message}") }
+        }
     }
 
     val appInputLauncher = rememberLauncherForActivityResult(
@@ -174,24 +218,48 @@ fun AuthCenterScreen(navController: NavHostController) {
         }
     }
 
-    // 授权请求确认（深链发起）
+    // 授权请求确认（深链发起）：应用名锁定不可编辑，带设备指纹时显示绑定说明
     pendingGrantApp?.let { app ->
         AlertDialog(
             visible = true,
-            onDismissRequest = { pendingGrantApp = null },
-            title = { Text("授权请求", maxLines = 1) },
-            text = { Text("「$app」申请使用你的邮箱（$developerEmail）作为账号授权。同意将签发授权码并复制到剪贴板。") },
+            onDismissRequest = { clearPendingGrant() },
+            title = { Text("来自 $app 的授权请求", maxLines = 1) },
+            text = {
+                Text(
+                    buildString {
+                        appendLine("「$app」申请使用你的邮箱（$developerEmail）作为账号授权。")
+                        pendingGrantDevice?.let { d ->
+                            appendLine("设备指纹：${d.take(8)}…（绑定本机设备）")
+                        }
+                        append(
+                            if (pendingGrantCallback != null) {
+                                "同意将签发授权码并自动返回应用。"
+                            } else {
+                                "同意将签发授权码并复制到剪贴板。"
+                            },
+                        )
+                    },
+                )
+            },
             confirmButton = {
                 GrayButton(
                     onClick = {
-                        pendingGrantApp = null
-                        issue(app)
+                        val n = pendingGrantNonce
+                        val d = pendingGrantDevice
+                        val cb = pendingGrantCallback
+                        clearPendingGrant()
+                        issue(app, n, d, cb)
                     },
-                    label = { Text("同意授权") },
+                    label = {
+                        Text(
+                            if (pendingGrantCallback != null) "确认并自动返回应用" else "同意授权",
+                            maxLines = 1,
+                        )
+                    },
                 )
             },
             dismissButton = {
-                GrayButton(onClick = { pendingGrantApp = null }, label = { Text("拒绝") })
+                GrayButton(onClick = { clearPendingGrant() }, label = { Text("拒绝") })
             },
         )
     }
