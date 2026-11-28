@@ -29,12 +29,16 @@ class AppSettings(private val context: Context) {
     /**
      * 授权记录：商店给本机其他应用签发的授权（邮箱等），仅存本地。
      * 每条：应用名 | 被授权邮箱 | 签发时间 | 授权码（内置密码本加密，可验证归属）。
+     * 授权协议 v2：可选附带请求方的 nonce（防重放）与 device（设备指纹），
+     * 旧记录缺字段反序列化为 null。
      */
     data class AuthGrant(
         val app: String,
         val email: String,
         val createdAt: Long,
         val code: String,
+        val nonce: String? = null,
+        val device: String? = null,
     )
 
     private val _authGrants = MutableStateFlow(readAuthGrants())
@@ -44,26 +48,72 @@ class AppSettings(private val context: Context) {
         (readString(KEY_AUTH_GRANTS) ?: "").lineSequence()
             .mapNotNull { l ->
                 val p = l.split("|")
-                if (p.size >= 4) AuthGrant(p[0], p[1], p[2].toLongOrNull() ?: 0L, p.drop(3).joinToString("|")) else null
+                if (p.size < 4) return@mapNotNull null
+                val rest = p.drop(3)
+                // 新格式在 code 之后追加 `n:{nonce}` / `d:{device}` 字段；
+                // 授权码为标准 Base64（不含冒号），以 n:/d: 前缀即可与旧格式区分。
+                val hasV2 = rest.drop(1).any { it.startsWith("n:") || it.startsWith("d:") }
+                if (hasV2) {
+                    var nonce: String? = null
+                    var device: String? = null
+                    rest.drop(1).forEach { f ->
+                        when {
+                            f.startsWith("n:") -> nonce = f.substring(2).ifBlank { null }
+                            f.startsWith("d:") -> device = f.substring(2).ifBlank { null }
+                        }
+                    }
+                    AuthGrant(p[0], p[1], p[2].toLongOrNull() ?: 0L, p[3], nonce, device)
+                } else {
+                    // 旧格式：code 位于第 4 段起（可能含 |）
+                    AuthGrant(p[0], p[1], p[2].toLongOrNull() ?: 0L, rest.joinToString("|"))
+                }
             }
             .toList()
 
     private fun writeAuthGrants(grants: List<AuthGrant>) {
-        val text = grants.joinToString("\n") { "${it.app}|${it.email}|${it.createdAt}|${it.code}" }
+        val text = grants.joinToString("\n") { g ->
+            buildString {
+                append("${g.app}|${g.email}|${g.createdAt}|${g.code}")
+                if (g.nonce != null) append("|n:${g.nonce}")
+                if (g.device != null) append("|d:${g.device}")
+            }
+        }
         _authGrants.value = grants
         prefs.edit().putString(KEY_AUTH_GRANTS, text).apply()
     }
 
-    /** 给 [app] 签发邮箱授权，返回授权码（加密文本，供被授权应用录入校验）。 */
-    fun addAuthGrant(app: String, email: String): AuthGrant {
+    /**
+     * 给 [app] 签发邮箱授权，返回授权码（加密文本，供被授权应用录入校验）。
+     *
+     * 授权协议 v2 明文格式（通用，可选字段缺省时省略）：
+     * ```
+     * TENC-GRANT app={应用名} email={开发者邮箱} time={毫秒时间戳}[ n={nonce}][ d={device}]
+     * ```
+     * 应用名与邮箱一律用 trim 后的值；加密仍为
+     * TimeToken.encryptText(明文, Secrets.LOG_CODEBOOK)，算法与密码本严格不变。
+     * 新增字段对旧版被授权应用无害（它们只检查前缀与 app= 字段）。
+     */
+    fun addAuthGrant(
+        app: String,
+        email: String,
+        nonce: String? = null,
+        device: String? = null,
+    ): AuthGrant {
+        val now = System.currentTimeMillis()
+        val a = app.trim()
+        val e = email.trim()
+        val plain = buildString {
+            append("TENC-GRANT app=$a email=$e time=$now")
+            nonce?.trim()?.takeIf { it.isNotBlank() }?.let { append(" n=$it") }
+            device?.trim()?.takeIf { it.isNotBlank() }?.let { append(" d=$it") }
+        }
         val grant = AuthGrant(
-            app = app.trim(),
-            email = email.trim(),
-            createdAt = System.currentTimeMillis(),
-            code = com.tengwear.tengstore.ui.util.TimeToken.encryptText(
-                "TENC-GRANT app=$app email=$email time=${System.currentTimeMillis()}",
-                Secrets.LOG_CODEBOOK,
-            ),
+            app = a,
+            email = e,
+            createdAt = now,
+            code = com.tengwear.tengstore.ui.util.TimeToken.encryptText(plain, Secrets.LOG_CODEBOOK),
+            nonce = nonce?.trim()?.takeIf { it.isNotBlank() },
+            device = device?.trim()?.takeIf { it.isNotBlank() },
         )
         writeAuthGrants(_authGrants.value + grant)
         return grant
