@@ -27,8 +27,8 @@ android {
         // 从 30（Wear OS 3 专属）降低后可适配更多手表与安卓设备
         minSdk = 25
         targetSdk = 34
-        versionCode = 68
-        versionName = "1.67"
+        versionCode = 69
+        versionName = "1.68"
 
         // 密码本来自本地 secrets.properties（不入库），编译期写入 BuildConfig
         buildConfigField(
