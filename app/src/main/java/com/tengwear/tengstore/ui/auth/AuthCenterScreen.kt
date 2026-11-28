@@ -4,14 +4,20 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.widget.Toast
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +33,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material3.Icon
@@ -46,6 +54,8 @@ import com.tengwear.tengstore.ui.util.launchTextInputSafely
 import com.tengwear.tengstore.ui.util.parseTextInputResult
 import com.tengwear.tengstore.ui.util.edgeSpacers
 import com.tengwear.tengstore.ui.util.GrayButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,12 +157,6 @@ fun AuthCenterScreen(navController: NavHostController) {
         }
     }
 
-    val appInputLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        parseTextInputResult(result.data)?.let { issue(it) }
-    }
-
     ScreenScaffold(
         scrollState = listState,
         timeText = { TimeText() },
@@ -171,13 +175,11 @@ fun AuthCenterScreen(navController: NavHostController) {
 
             item {
                 GrayButton(
-                    onClick = {
-                        launchTextInputSafely(appInputLauncher, "输入要授权的应用名")
-                    },
+                    onClick = { navController.navigate("auth_pick") },
                     modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
                     label = { Text("新增授权", maxLines = 1) },
-                    secondaryLabel = { Text("邮箱 → 应用", maxLines = 1) },
+                    secondaryLabel = { Text("选择本机应用", maxLines = 1) },
                 )
             }
 
@@ -308,6 +310,197 @@ fun AuthCenterScreen(navController: NavHostController) {
             dismissButton = {
                 GrayButton(onClick = { pendingRevoke = null }, label = { Text("取消") })
             },
+        )
+    }
+}
+
+/** 本机可启动应用信息（用于授权选择）。 */
+private data class PickerApp(
+    val label: String,
+    val packageName: String,
+    val icon: ImageBitmap?,
+)
+
+/** Drawable → 固定尺寸 ImageBitmap；失败返回 null（条目回退默认钥匙图标）。 */
+private fun Drawable.toPickerIcon(size: Int = 48): ImageBitmap? = runCatching {
+    (this as? BitmapDrawable)?.bitmap
+        ?.let { Bitmap.createScaledBitmap(it, size, size, true)?.asImageBitmap() }
+        ?: Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also { bmp ->
+            val canvas = Canvas(bmp)
+            setBounds(0, 0, size, size)
+            draw(canvas)
+        }.asImageBitmap()
+}.getOrNull()
+
+/**
+ * 手动选择路径的签发：签发授权码并复制到剪贴板（无 nonce/device/callback）。
+ * 前置条件不满足时 Toast 提示并返回 null。
+ */
+internal fun issueGrantFromPicker(app: String): AppSettings.AuthGrant? {
+    val a = app.trim()
+    if (a.isBlank()) {
+        Toast.makeText(AppContainer.context, "应用名不能为空", Toast.LENGTH_SHORT).show()
+        return null
+    }
+    val email = AppContainer.settings.developerEmail.value
+    if (email.isBlank()) {
+        Toast.makeText(AppContainer.context, "请先到设置绑定开发者邮箱，才能授权给其他应用", Toast.LENGTH_LONG).show()
+        return null
+    }
+    val grant = AppContainer.settings.addAuthGrant(a, email)
+    runCatching {
+        val cm = AppContainer.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("TENC Store 授权码", grant.code))
+    }
+    AppContainer.log("授权中心", "已授权 $a（邮箱 $email）")
+    return grant
+}
+
+/**
+ * 应用选择页：列出本机可启动的应用（不含商店自身），点击条目确认后即签发授权。
+ * 独立导航页，右滑/返回键可回到授权中心。列表底部保留手动输入兜底
+ * （少数无启动器入口的应用，如纯后台服务）。
+ */
+@Composable
+fun AppPickerScreen(navController: NavHostController) {
+    val context = AppContainer.context
+    var apps by remember { mutableStateOf<List<PickerApp>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var pendingApp by remember { mutableStateOf<PickerApp?>(null) }
+    var issuedGrant by remember { mutableStateOf<AppSettings.AuthGrant?>(null) }
+    val listState = rememberScalingLazyListState()
+    RotaryScroll(listState)
+
+    // 后台读取本机可启动应用（排除商店自身），按名称排序
+    LaunchedEffect(Unit) {
+        apps = withContext(Dispatchers.IO) {
+            val pm = context.packageManager
+            runCatching {
+                val query = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+                pm.queryIntentActivities(query, 0)
+                    .asSequence()
+                    .filter { it.activityInfo.packageName != context.packageName }
+                    .distinctBy { it.activityInfo.packageName }
+                    .mapNotNull { ai ->
+                        val label = runCatching { ai.loadLabel(pm).toString().trim() }.getOrNull()
+                        if (label.isNullOrBlank()) {
+                            null
+                        } else {
+                            PickerApp(
+                                label = label,
+                                packageName = ai.activityInfo.packageName,
+                                icon = runCatching { ai.loadIcon(pm).toPickerIcon() }.getOrNull(),
+                            )
+                        }
+                    }
+                    .sortedBy { it.label.lowercase(Locale.ROOT) }
+                    .toList()
+            }.getOrDefault(emptyList())
+        }
+        loading = false
+    }
+
+    val manualInputLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        parseTextInputResult(result.data)?.let { issuedGrant = issueGrantFromPicker(it) }
+    }
+
+    ScreenScaffold(scrollState = listState, timeText = { TimeText() }) {
+        ScalingLazyColumn(state = listState, autoCentering = null, modifier = Modifier.fillMaxSize()) {
+            edgeSpacers()
+            item { ListHeader { Text("选择应用授权") } }
+
+            when {
+                loading -> item {
+                    Text("正在读取应用列表…", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+                apps.isEmpty() -> item {
+                    Text("未找到本机可启动的应用。", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+                else -> items(apps, key = { it.packageName }) { app ->
+                    GrayButton(
+                        onClick = { pendingApp = app },
+                        modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                        icon = {
+                            if (app.icon != null) {
+                                Image(
+                                    bitmap = app.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            } else {
+                                Icon(Icons.Default.Key, contentDescription = null)
+                            }
+                        },
+                        label = { Text(app.label, maxLines = 1) },
+                        secondaryLabel = { Text(app.packageName, maxLines = 1) },
+                    )
+                }
+            }
+
+            // 兜底：无启动器入口的应用（纯后台服务）仍可手动输入应用名
+            item {
+                GrayButton(
+                    onClick = { launchTextInputSafely(manualInputLauncher, "输入要授权的应用名") },
+                    modifier = Modifier.fillMaxWidth().height(LIST_CHIP_HEIGHT),
+                    icon = { Icon(Icons.Default.Email, contentDescription = null) },
+                    label = { Text("手动输入应用名", maxLines = 1) },
+                    secondaryLabel = { Text("列表外应用", maxLines = 1) },
+                )
+            }
+        }
+    }
+
+    // 选择确认
+    pendingApp?.let { app ->
+        AlertDialog(
+            visible = true,
+            onDismissRequest = { pendingApp = null },
+            title = { Text("授权给「${app.label}」？", maxLines = 1) },
+            text = {
+                Text(
+                    "将把你的开发者邮箱签发授权码并复制到剪贴板。\n包名：${app.packageName}",
+                )
+            },
+            confirmButton = {
+                GrayButton(
+                    onClick = {
+                        val name = app.label
+                        pendingApp = null
+                        issuedGrant = issueGrantFromPicker(name)
+                    },
+                    label = { Text("确认授权") },
+                )
+            },
+            dismissButton = {
+                GrayButton(onClick = { pendingApp = null }, label = { Text("取消") })
+            },
+        )
+    }
+
+    // 签发结果：展示授权码，确认后返回授权中心
+    issuedGrant?.let { grant ->
+        AlertDialog(
+            visible = true,
+            onDismissRequest = { issuedGrant = null; navController.popBackStack() },
+            confirmButton = {
+                GrayButton(
+                    onClick = {
+                        runCatching {
+                            val cm = AppContainer.context
+                                .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            cm.setPrimaryClip(ClipData.newPlainText("TENC Store 授权码", grant.code))
+                            Toast.makeText(AppContainer.context, "已复制授权码", Toast.LENGTH_SHORT).show()
+                        }
+                        issuedGrant = null
+                        navController.popBackStack()
+                    },
+                    label = { Text("复制授权码") },
+                )
+            },
+            title = { Text("已授权 ${grant.app}", maxLines = 1) },
+            text = { Text("授权码已自动复制到剪贴板，粘贴到「${grant.app}」即可完成绑定。") },
         )
     }
 }
